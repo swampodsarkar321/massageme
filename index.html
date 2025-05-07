@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MessageMe</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .theme-light {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f0f2f5;
+      --text-primary: #050505;
+      --text-secondary: #65676b;
+      --accent: #1877f2;
+      --border: #dddfe2;
+    }
+    .theme-dark {
+      --bg-primary: #242526;
+      --bg-secondary: #18191a;
+      --text-primary: #e4e6eb;
+      --text-secondary: #b0b3b8;
+      --accent: #2d88ff;
+      --border: #3e4042;
+    }
+    body {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease;
+    }
+    .bg-primary {
+      background-color: var(--bg-primary);
+    }
+    .bg-secondary {
+      background-color: var(--bg-secondary);
+    }
+    .text-primary {
+      color: var(--text-primary);
+    }
+    .text-secondary {
+      color: var(--text-secondary);
+    }
+    .border-primary {
+      border-color: var(--border);
+    }
+    .accent {
+      background-color: var(--accent);
+    }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 8px 12px;
+      border-radius: 18px;
+      margin-bottom: 8px;
+    }
+    .chat-bubble.sent {
+      background-color: var(--accent);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.received {
+      background-color: var(--bg-secondary);
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+    .online-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #31a24c;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      border: 2px solid var(--bg-primary);
+    }
+    .active-friend {
+      background-color: rgba(45, 136, 255, 0.1);
+    }
+    .logo {
+      background: linear-gradient(135deg, #00b4ff 0%, #0066ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+    .search-highlight {
+      background-color: rgba(0, 180, 255, 0.2);
+    }
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: #ff3b30;
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .notification-popup {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      width: 250px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .notification-popup.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .notification-popup .sender {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .notification-popup .message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .notification-popup .time {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+    .notification-popup .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="theme-light">
+  <div id="app" class="h-screen flex flex-col">
+    <!-- Login Screen -->
+    <div id="login" class="flex items-center justify-center h-full">
+      <div class="bg-primary p-8 rounded-lg shadow-lg w-96">
+        <div class="text-center mb-8">
+          <div class="flex items-center justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white">
+              <i class="fas fa-comment-alt text-3xl"></i>
+            </div>
+          </div>
+          <h1 class="text-3xl font-bold logo">MessageMe</h1>
+          <p class="text-secondary mt-2">Connect with friends and family</p>
+        </div>
+        <div class="mb-4">
+          <input 
+            type="text" 
+            id="username" 
+            placeholder="Enter username" 
+            class="w-full p-3 border-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-primary text-primary"
+          />
+        </div>
+        <button 
+          onclick="loginUser()" 
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200"
+        >
+          Login
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden h-full flex flex-col">
+      <!-- Header -->
+      <header class="bg-primary border-b border-primary py-3 px-4 flex justify-between items-center">
+        <div class="flex items-center">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white mr-2">
+            <i class="fas fa-comment-alt text-sm"></i>
+          </div>
+          <h1 class="text-xl font-bold logo">MessageMe</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center relative">
+            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+              <span id="currentUserInitial">U</span>
+            </div>
+            <span class="ml-2 font-medium" id="currentUser"></span>
+            <div id="userMenuBtn" class="ml-2 cursor-pointer">
+              <i class="fas fa-chevron-down text-secondary text-sm"></i>
+            </div>
+            <div id="userMenu" class="absolute right-0 top-10 bg-primary border border-primary rounded-lg shadow-lg w-48 z-50 hidden">
+              <ul class="py-1">
+                <li class="px-4 py-2 hover:bg-secondary cursor-pointer" onclick="logout()">
+                  <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </li>
+              </ul>
+            </div>
+          </div>
+          <button 
+            onclick="toggleTheme()" 
+            class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            title="Toggle theme"
+          >
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-80 border-r border-primary bg-primary flex flex-col">
+          <!-- Search -->
+          <div class="p-3 border-b border-primary">
+            <div class="relative">
+              <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search messages" 
+                class="w-full bg-secondary text-primary py-2 px-4 pl-10 rounded-lg focus:outline-none"
+                oninput="searchMessages()"
+              />
+              <i class="fas fa-search absolute left-3 top-3 text-secondary"></i>
+            </div>
+          </div>
+
+          <!-- Friend Requests Section -->
+          <div class="p-3 border-b border-primary">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold">Friend Requests</h3>
+              <div class="flex items-center">
+                <span id="requestCount" class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mr-2 hidden">0</span>
+                <button onclick="toggleRequests()" class="text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center">
+                  <i class="fas fa-chevron-down text-sm"></i>
+                </button>
+              </div>
+            </div>
+            <ul id="requestsList" class="space-y-2"></ul>
+          </div>
+
+          <!-- Friends List -->
+          <div class="flex-1 overflow-y-auto">
+            <h3 class="font-semibold p-3">Friends</h3>
+            <ul id="friendsList" class="space-y-1"></ul>
+          </div>
+
+          <!-- Add Friend Section -->
+          <div class="p-3 border-t border-primary">
+            <h3 class="font-semibold mb-2">Add Friend</h3>
+            <div class="flex">
+              <input 
+                type="text" 
+                id="friendName" 
+                placeholder="Friend username" 
+                class="flex-1 bg-secondary text-primary py-2 px-3 rounded-l-lg focus:outline-none"
+              />
+              <button 
+                onclick="sendRequest()" 
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded-r-lg transition"
+                title="Send friend request"
+              >
+                <i class="fas fa-user-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chatSection" class="flex-1 flex flex-col bg-secondary hidden">
+          <!-- Chat Header -->
+          <div class="bg-primary border-b border-primary p-3 flex items-center">
+            <button 
+              id="backButton" 
+              onclick="hideChat()" 
+              class="md:hidden mr-2 text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center"
+            >
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="flex items-center">
+              <div class="relative">
+                <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
+                  <span id="chatWithInitial">F</span>
+                </div>
+                <div id="friendStatus" class="online-dot hidden"></div>
+              </div>
+              <div class="ml-3">
+                <h2 id="chatWith" class="font-semibold"></h2>
+                <p id="friendStatusText" class="text-xs text-secondary">Offline</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-2"></div>
+
+          <!-- Message Input -->
+          <div class="bg-primary border-t border-primary p-3">
+            <div class="flex items-center">
+              <button class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                <i class="fas fa-plus text-secondary"></i>
+              </button>
+              <input 
+                type="text" 
+                id="message" 
+                placeholder="Type a message" 
+                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none"
+                onkeypress="if(event.keyCode === 13) sendMessage()"
+              />
+              <button 
+                onclick="sendMessage()" 
+                class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white ml-2 hover:bg-blue-600 transition"
+                title="Send message"
+              >
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="flex-1 flex items-center justify-center bg-secondary">
+          <div class="text-center p-6">
+            <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-comment-dots text-3xl text-secondary"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Your messages</h3>
+            <p class="text-secondary mb-6">Select a friend to start chatting</p>
+            <button 
+              onclick="document.getElementById('friendName').focus()" 
+              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+            >
+              <i class="fas fa-user-plus mr-2"></i>Add Friend
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Popup -->
+  <div id="notificationPopup" class="notification-popup">
+    <button class="close-btn" onclick="closeNotification()">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="sender"></div>
+    <div class="message"></div>
+    <div class="time"></div>
+  </div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBJ0r_Nb9IplADBNNsFIgbqb01kcbGvuso",
+    authDomain: "we-call-430e1.firebaseapp.com",
+    databaseURL: "https://we-call-430e1-default-rtdb.firebaseio.com",
+    projectId: "we-call-430e1",
+    storageBucket: "we-call-430e1.appspot.com",
+    messagingSenderId: "398312328918",
+    appId: "1:398312328918:web:4ce69dd9927a9e5b9fc377",
+    measurementId: "G-S3QGZ2M8RX"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let currentUser = "";
+  let chattingWith = "";
+  let friendStatusInterval;
+  let allMessages = {}; // Store all messages for search functionality
+  let messageListeners = {}; // To track message listeners for each friend
+  let unreadMessages = {}; // Track unread messages count
+  let lastMessageTimestamps = {}; // Track last message timestamps for each chat
+
+  // Check for existing session on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const savedUser = localStorage.getItem('messageMeUser');
+    if (savedUser) {
+      document.getElementById("username").value = savedUser;
+      loginUser();
+    }
+  });
+
+  function loginUser() {
+    const user = document.getElementById("username").value.trim();
+    if (!user) return alert("Please enter a username");
+
+    currentUser = user;
+    document.getElementById("currentUser").textContent = user;
+    document.getElementById("currentUserInitial").textContent = user.charAt(0).toUpperCase();
+
+    // Save user to localStorage for persistent login
+    localStorage.setItem('messageMeUser', user);
+    
+    db.ref(`users/${user}`).set({ 
+      online: true, 
+      lastActive: Date.now(),
+      name: user
+    });
+    
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+
+    loadRequests();
+    loadFriends();
+    updateActivity();
+    setupMessageNotifications();
+  }
+
+  function logout() {
+    if (currentUser) {
+      db.ref(`users/${currentUser}`).update({ online: false });
+    }
+    
+    // Clear all listeners
+    Object.values(messageListeners).forEach(off => off());
+    if (friendStatusInterval) clearInterval(friendStatusInterval);
+    
+    // Clear local storage and reset
+    localStorage.removeItem('messageMeUser');
+    currentUser = "";
+    chattingWith = "";
+    allMessages = {};
+    messageListeners = {};
+    unreadMessages = {};
+    lastMessageTimestamps = {};
+    
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("login").classList.remove("hidden");
+    document.getElementById("username").value = "";
+    document.getElementById("username").focus();
+    
+    // Close user menu
+    document.getElementById("userMenu").classList.add("hidden");
+  }
+
+  function updateActivity() {
+    // Update every 30 seconds
+    setInterval(() => {
+      db.ref(`users/${currentUser}`).update({ lastActive: Date.now() });
+    }, 30000);
+  }
+
+  function sendRequest() {
+    const friend = document.getElementById("friendName").value.trim();
+    if (!friend || friend === currentUser) return alert("Invalid username");
+
+    db.ref(`requests/${friend}/${currentUser}`).set({
+      from: currentUser,
+      timestamp: Date.now()
+    });
+    
+    document.getElementById("friendName").value = "";
+    showToast(`Friend request sent to ${friend}`);
+  }
+
+  function loadRequests() {
+    db.ref(`requests/${currentUser}`).on("value", snap => {
+      const data = snap.val() || {};
+      const list = document.getElementById("requestsList");
+      list.innerHTML = "";
+      const requestCount = Object.keys(data).length;
+      
+      // Update request count badge
+      const requestBadge = document.getElementById("requestCount");
+      if (requestCount > 0) {
+        requestBadge.textContent = requestCount;
+        requestBadge.classList.remove("hidden");
+      } else {
+        requestBadge.classList.add("hidden");
+      }
+
+      Object.entries(data).forEach(([requester, requestData]) => {
+        const li = document.createElement("li");
+        li.className = "flex items-center justify-between p-2 hover:bg-secondary rounded-lg transition";
+        
+        li.innerHTML = `
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white mr-2">
+              ${requester.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div class="font-medium">${requester}</div>
+              <div class="text-xs text-secondary">${formatDate(requestData.timestamp)}</div>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button onclick="acceptRequest('${requester}')" class="text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded-lg text-sm transition">
+              Accept
+            </button>
+            <button onclick="declineRequest('${requester}')" class="text-secondary hover:bg-secondary px-2 py-1 rounded-lg text-sm transition">
+              Decline
+            </button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    });
+  }
+
+  function acceptRequest(user) {
+    db.ref(`friends/${currentUser}/${user}`).set({
+      since: Date.now()
+    });
+    db.ref(`friends/${user}/${currentUser}`).set({
+      since: Date.now()
+    });
+    db.ref(`requests/${currentUser}/${user}`).remove();
+    showToast(`You are now friends with ${user}`);
+    loadFriends();
+  }
+
+  function declineRequest(user) {
+    db.ref(`requests/${currentUser}/${user}`).remove();
+    showToast(`Friend request from ${user} declined`);
+  }
+
+  function loadFriends() {
+    db.ref(`friends/${currentUser}`).on("value", snap => {
+      const data = snap.val() || {};
+      const list = document.getElementById("friendsList");
+      list.innerHTML = "";
+
+      // Clear previous message listeners
+      Object.values(messageListeners).forEach(off => off());
+      messageListeners = {};
+      
+      // Initialize unread messages for each friend
+      Object.keys(data).forEach(friend => {
+        if (!unreadMessages[friend]) {
+          unreadMessages[friend] = 0;
+        }
+      });
+
+      Object.entries(data).forEach(([friend, friendData]) => {
+        const li = document.createElement("li");
+        li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative";
+        li.id = `friend-${friend}`;
+        
+        const friendRef = db.ref(`users/${friend}`);
+        friendRef.on("value", snapshot => {
+          const info = snapshot.val();
+          const isActive = info && Date.now() - info.lastActive < 60000;
+          
+          // Add unread badge if there are unread messages
+          const unreadBadge = unreadMessages[friend] > 0 
+            ? `<div class="notification-badge">${unreadMessages[friend]}</div>` 
+            : '';
+          
+          li.innerHTML = `
+            <div class="relative mr-3">
+              <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
+                ${friend.charAt(0).toUpperCase()}
+              </div>
+              ${isActive ? '<div class="online-dot"></div>' : ''}
+            </div>
+            <div class="flex-1">
+              <div class="flex justify-between items-center">
+                <span class="font-medium">${friend}</span>
+                <span class="text-xs text-secondary">${formatDate(friendData.since)}</span>
+              </div>
+              <p class="text-xs text-secondary truncate">
+                ${isActive ? 'Active now' : 'Last seen recently'}
+              </p>
+            </div>
+            ${unreadBadge}
+          `;
+          
+          li.onclick = () => startChat(friend);
+        });
+        
+        list.appendChild(li);
+        
+        // Setup message listener for this friend
+        setupMessageListener(friend);
+      });
+    });
+  }
+
+  function setupMessageListener(friend) {
+    const chatKey = [currentUser, friend].sort().join('_');
+    
+    // Remove previous listener if exists
+    if (messageListeners[friend]) {
+      messageListeners[friend]();
+    }
+    
+    // Add new listener
+    messageListeners[friend] = db.ref(`messages/${chatKey}`).on("value", snap => {
+      const messages = snap.val() || {};
+      const lastMessage = Object.values(messages).pop();
+      
+      if (!lastMessage) return;
+      
+      // Store last message timestamp for this chat
+      lastMessageTimestamps[friend] = lastMessage.timestamp || Date.now();
+      
+      // If the message is not from current user and chat is not open with this friend
+      if (lastMessage.from !== currentUser && chattingWith !== friend) {
+        // Increment unread count
+        unreadMessages[friend] = (unreadMessages[friend] || 0) + 1;
+        
+        // Update friend list item
+        updateFriendListItem(friend);
+        
+        // Show notification
+        if (document.visibilityState !== 'visible') {
+          showMessageNotification(friend, lastMessage.text, lastMessage.timestamp);
+        }
+      }
+    });
+  }
+
+  function updateFriendListItem(friend) {
+    const friendItem = document.getElementById(`friend-${friend}`);
+    if (!friendItem) return;
+    
+    const friendRef = db.ref(`users/${friend}`);
+    friendRef.once("value").then(snapshot => {
+      const info = snapshot.val();
+      const isActive = info && Date.now() - info.lastActive < 60000;
+      
+      // Add unread badge if there are unread messages
+      const unreadBadge = unreadMessages[friend] > 0 
+        ? `<div class="notification-badge">${unreadMessages[friend]}</div>` 
+        : '';
+      
+      friendItem.innerHTML = `
+        <div class="relative mr-3">
+          <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
+            ${friend.charAt(0).toUpperCase()}
+          </div>
+          ${isActive ? '<div class="online-dot"></div>' : ''}
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-center">
+            <span class="font-medium">${friend}</span>
+            <span class="text-xs text-secondary">${formatDate(lastMessageTimestamps[friend] || Date.now())}</span>
+          </div>
+          <p class="text-xs text-secondary truncate">
+            ${isActive ? 'Active now' : 'Last seen recently'}
+          </p>
+        </div>
+        ${unreadBadge}
+      `;
+      
+      friendItem.onclick = () => startChat(friend);
+    });
+  }
+
+  function setupMessageNotifications() {
+    // Handle browser tab visibility changes
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') {
+        // Clear any notifications when tab becomes active
+        document.title = "MessageMe";
+      }
+    });
+  }
+
+  function showMessageNotification(sender, message, timestamp) {
+    // Update browser tab title
+    document.title = `(${unreadMessages[sender]}) New message from ${sender} | MessageMe`;
+    
+    // Show popup notification
+    const popup = document.getElementById("notificationPopup");
+    popup.querySelector('.sender').textContent = sender;
+    popup.querySelector('.message').textContent = message.length > 50 ? message.substring(0, 50) + '...' : message;
+    popup.querySelector('.time').textContent = formatTime(timestamp);
+    
+    popup.classList.add("show");
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      popup.classList.remove("show");
+    }, 5000);
+  }
+
+  function closeNotification() {
+    document.getElementById("notificationPopup").classList.remove("show");
+  }
+
+  function startChat(user) {
+    chattingWith = user;
+    document.getElementById("chatSection").classList.remove("hidden");
+    document.getElementById("emptyState").classList.add("hidden");
+    document.getElementById("chatWith").textContent = user;
+    document.getElementById("chatWithInitial").textContent = user.charAt(0).toUpperCase();
+    
+    // Reset unread count for this friend
+    unreadMessages[user] = 0;
+    updateFriendListItem(user);
+    
+    // Update browser title
+    document.title = "MessageMe";
+    
+    // Update responsive behavior
+    document.querySelector('.w-80').classList.add('hidden', 'md:block');
+    
+    // Monitor friend's status
+    monitorFriendStatus(user);
+    
+    const chatKey = [currentUser, user].sort().join('_');
+    db.ref(`messages/${chatKey}`).on("value", snap => {
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML = "";
+      const data = snap.val() || {};
+      allMessages[user] = data; // Store messages for search
+      
+      Object.entries(data).forEach(([key, msg]) => {
+        const isSent = msg.from === currentUser;
+        const div = document.createElement("div");
+        div.className = `flex ${isSent ? 'justify-end' : 'justify-start'}`;
+        
+        div.innerHTML = `
+          <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
+            <p>${msg.text}</p>
+            <p class="text-xs mt-1 ${isSent ? 'text-blue-100' : 'text-secondary'} text-right">
+              ${formatTime(msg.timestamp || Date.now())}
+            </p>
+          </div>
+        `;
+        
+        chatBox.appendChild(div);
+      });
+      
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  }
+
+  function searchMessages() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    if (!searchTerm) return;
+    
+    let foundMessages = [];
+    
+    // Search through all messages
+    Object.entries(allMessages).forEach(([friend, messages]) => {
+      Object.entries(messages).forEach(([key, msg]) => {
+        if (msg.text.toLowerCase().includes(searchTerm)) {
+          foundMessages.push({
+            friend,
+            message: msg
+          });
+        }
+      });
+    });
+    
+    // Display search results
+    const chatBox = document.getElementById("chatBox");
+    chatBox.innerHTML = "";
+    
+    if (foundMessages.length === 0) {
+      chatBox.innerHTML = `
+        <div class="flex items-center justify-center h-full">
+          <p class="text-secondary">No messages found</p>
+        </div>
+      `;
+      return;
+    }
+    
+    foundMessages.forEach(item => {
+      const isSent = item.message.from === currentUser;
+      const div = document.createElement("div");
+      div.className = `flex ${isSent ? 'justify-end' : 'justify-start'} mb-4`;
+      
+      // Highlight the search term in the message
+      const messageText = item.message.text.replace(
+        new RegExp(searchTerm, 'gi'),
+        match => `<span class="search-highlight">${match}</span>`
+      );
+      
+      div.innerHTML = `
+        <div class="max-w-xs">
+          <div class="text-xs text-secondary mb-1">
+            Chat with ${item.friend} • ${formatTime(item.message.timestamp)}
+          </div>
+          <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
+            <p>${messageText}</p>
+          </div>
+        </div>
+      `;
+      
+      div.onclick = () => {
+        startChat(item.friend);
+        document.getElementById('searchInput').value = '';
+      };
+      
+      chatBox.appendChild(div);
+    });
+  }
+
+  function monitorFriendStatus(friend) {
+    // Clear any existing interval
+    if (friendStatusInterval) clearInterval(friendStatusInterval);
+    
+    const friendRef = db.ref(`users/${friend}`);
+    const statusDot = document.getElementById("friendStatus");
+    const statusText = document.getElementById("friendStatusText");
+    
+    friendRef.on("value", snapshot => {
+      const info = snapshot.val();
+      const isActive = info && Date.now() - info.lastActive < 60000;
+      
+      statusDot.classList.toggle("hidden", !isActive);
+      statusText.textContent = isActive ? "Active now" : "Last seen recently";
+      statusText.className = `text-xs ${isActive ? 'text-green-500' : 'text-secondary'}`;
+      
+      // Highlight friend in friends list
+      const friendElement = document.getElementById(`friend-${friend}`);
+      if (friendElement) {
+        friendElement.classList.toggle("active-friend", isActive);
+      }
+    });
+    
+    // Check status every 10 seconds
+    friendStatusInterval = setInterval(() => {
+      friendRef.once("value").then(snapshot => {
+        const info = snapshot.val();
+        const isActive = info && Date.now() - info.lastActive < 60000;
+        
+        statusDot.classList.toggle("hidden", !isActive);
+        statusText.textContent = isActive ? "Active now" : "Last seen recently";
+        statusText.className = `text-xs ${isActive ? 'text-green-500' : 'text-secondary'}`;
+      });
+    }, 10000);
+  }
+
+  function hideChat() {
+    document.getElementById("chatSection").classList.add("hidden");
+    document.getElementById("emptyState").classList.remove("hidden");
+    document.querySelector('.w-80').classList.remove('hidden');
+    if (friendStatusInterval) clearInterval(friendStatusInterval);
+  }
+
+  function sendMessage() {
+    const text = document.getElementById("message").value.trim();
+    if (!text) return;
+
+    const chatKey = [currentUser, chattingWith].sort().join('_');
+    db.ref(`messages/${chatKey}`).push({ 
+      from: currentUser, 
+      text,
+      timestamp: Date.now()
+    });
+    
+    document.getElementById("message").value = "";
+  }
+
+  function toggleTheme() {
+    document.body.classList.toggle("theme-dark");
+    document.body.classList.toggle("theme-light");
+    
+    const icon = document.querySelector('[onclick="toggleTheme()"] i');
+    if (document.body.classList.contains("theme-dark")) {
+      icon.classList.remove("fa-moon");
+      icon.classList.add("fa-sun");
+    } else {
+      icon.classList.remove("fa-sun");
+      icon.classList.add("fa-moon");
+    }
+  }
+
+  function toggleRequests() {
+    const list = document.getElementById("requestsList");
+    list.classList.toggle("hidden");
+  }
+
+  function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  }
+
+  function showToast(message) {
+    const toast = document.createElement("div");
+    toast.className = "fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.classList.add("opacity-0", "transition-opacity", "duration-300");
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // Toggle user menu
+  document.getElementById("userMenuBtn").addEventListener("click", function(e) {
+    e.stopPropagation();
+    document.getElementById("userMenu").classList.toggle("hidden");
+  });
+
+  // Close user menu when clicking outside
+  document.addEventListener("click", function() {
+    document.getElementById("userMenu").classList.add("hidden");
+  });
+
+  // Prevent menu from closing when clicking inside it
+  document.getElementById("userMenu").addEventListener("click", function(e) {
+    e.stopPropagation();
+  });
+</script>
+</body>
+</html>
