@@ -144,6 +144,79 @@
       color: var(--text-secondary);
       cursor: pointer;
     }
+    .group-icon {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background-color: var(--bg-primary);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    .friend-select-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+    .friend-select-item:hover {
+      background-color: var(--bg-secondary);
+    }
+    .friend-select-item.selected {
+      background-color: rgba(45, 136, 255, 0.2);
+    }
+    .group-member-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--bg-secondary);
+      padding: 4px 8px;
+      border-radius: 16px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .group-member-tag i {
+      margin-left: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="theme-light">
@@ -198,7 +271,7 @@
             </div>
             <div id="userMenu" class="absolute right-0 top-10 bg-primary border border-primary rounded-lg shadow-lg w-48 z-50 hidden">
               <ul class="py-1">
-                <li class="px-4 py-2 hover:bg-secondary cursor-pointer" onclick="logout()">
+                <li class="px-4 py-2 hover:bg-secondary cursor-pointer" id="logoutBtn">
                   <i class="fas fa-sign-out-alt mr-2"></i> Logout
                 </li>
               </ul>
@@ -325,6 +398,57 @@
           </div>
         </div>
 
+        <!-- Group Chat Area -->
+        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary hidden">
+          <!-- Group Chat Header -->
+          <div class="bg-primary border-b border-primary p-3 flex items-center">
+            <button 
+              id="backButtonGroup" 
+              onclick="hideGroupChat()" 
+              class="md:hidden mr-2 text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center"
+            >
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="flex items-center">
+              <div class="relative">
+                <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                  <i class="fas fa-users"></i>
+                </div>
+              </div>
+              <div class="ml-3">
+                <h2 id="groupChatName" class="font-semibold"></h2>
+                <p id="groupMembersCount" class="text-xs text-secondary">0 members</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Group Messages -->
+          <div id="groupChatBox" class="flex-1 p-4 overflow-y-auto space-y-2"></div>
+
+          <!-- Group Message Input -->
+          <div class="bg-primary border-t border-primary p-3">
+            <div class="flex items-center">
+              <button class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                <i class="fas fa-plus text-secondary"></i>
+              </button>
+              <input 
+                type="text" 
+                id="groupMessage" 
+                placeholder="Type a message" 
+                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none"
+                onkeypress="if(event.keyCode === 13) sendGroupMessage()"
+              />
+              <button 
+                onclick="sendGroupMessage()" 
+                class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white ml-2 hover:bg-blue-600 transition"
+                title="Send message"
+              >
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Empty State -->
         <div id="emptyState" class="flex-1 flex items-center justify-center bg-secondary">
           <div class="text-center p-6">
@@ -342,17 +466,57 @@
           </div>
         </div>
       </div>
+      
+      <!-- Group Creation Icon -->
+      <div id="createGroupBtn" class="group-icon hidden">
+        <i class="fas fa-users"></i>
+      </div>
     </div>
-  </div>
 
-  <!-- Notification Popup -->
-  <div id="notificationPopup" class="notification-popup">
-    <button class="close-btn" onclick="closeNotification()">
-      <i class="fas fa-times"></i>
-    </button>
-    <div class="sender"></div>
-    <div class="message"></div>
-    <div class="time"></div>
+    <!-- Notification Popup -->
+    <div id="notificationPopup" class="notification-popup">
+      <button class="close-btn" onclick="closeNotification()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="sender"></div>
+      <div class="message"></div>
+      <div class="time"></div>
+    </div>
+    
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal">
+      <div class="modal-content">
+        <h3 class="font-bold text-lg mb-4">Create New Group</h3>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1">Group Name</label>
+          <input 
+            type="text" 
+            id="groupNameInput" 
+            placeholder="Enter group name" 
+            class="w-full bg-secondary text-primary py-2 px-3 rounded-lg focus:outline-none"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1">Select Friends</label>
+          <div id="selectedFriends" class="flex flex-wrap mb-2"></div>
+          <div id="friendsSelectList" class="max-h-40 overflow-y-auto"></div>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button 
+            onclick="closeCreateGroupModal()" 
+            class="px-4 py-2 rounded-lg bg-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            Cancel
+          </button>
+          <button 
+            onclick="createGroup()" 
+            class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition"
+          >
+            Create Group
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -372,11 +536,18 @@
 
   let currentUser = "";
   let chattingWith = "";
+  let currentGroup = "";
   let friendStatusInterval;
-  let allMessages = {}; // Store all messages for search functionality
-  let messageListeners = {}; // To track message listeners for each friend
-  let unreadMessages = {}; // Track unread messages count
-  let lastMessageTimestamps = {}; // Track last message timestamps for each chat
+  let allMessages = {};
+  let allGroupMessages = {};
+  let messageListeners = {};
+  let groupMessageListeners = {};
+  let unreadMessages = {};
+  let unreadGroupMessages = {};
+  let lastMessageTimestamps = {};
+  let lastGroupMessageTimestamps = {};
+  let selectedFriendsForGroup = [];
+  let friendsList = [];
 
   // Check for existing session on page load
   document.addEventListener('DOMContentLoaded', function() {
@@ -385,6 +556,9 @@
       document.getElementById("username").value = savedUser;
       loginUser();
     }
+    
+    // Setup logout button
+    document.getElementById('logoutBtn').addEventListener('click', logout);
   });
 
   function loginUser() {
@@ -406,9 +580,11 @@
     
     document.getElementById("login").classList.add("hidden");
     document.getElementById("dashboard").classList.remove("hidden");
+    document.getElementById("createGroupBtn").classList.remove("hidden");
 
     loadRequests();
     loadFriends();
+    loadGroups();
     updateActivity();
     setupMessageNotifications();
   }
@@ -420,16 +596,24 @@
     
     // Clear all listeners
     Object.values(messageListeners).forEach(off => off());
+    Object.values(groupMessageListeners).forEach(off => off());
     if (friendStatusInterval) clearInterval(friendStatusInterval);
     
     // Clear local storage and reset
     localStorage.removeItem('messageMeUser');
     currentUser = "";
     chattingWith = "";
+    currentGroup = "";
     allMessages = {};
+    allGroupMessages = {};
     messageListeners = {};
+    groupMessageListeners = {};
     unreadMessages = {};
+    unreadGroupMessages = {};
     lastMessageTimestamps = {};
+    lastGroupMessageTimestamps = {};
+    selectedFriendsForGroup = [];
+    friendsList = [];
     
     document.getElementById("dashboard").classList.add("hidden");
     document.getElementById("login").classList.remove("hidden");
@@ -449,15 +633,46 @@
 
   function sendRequest() {
     const friend = document.getElementById("friendName").value.trim();
-    if (!friend || friend === currentUser) return alert("Invalid username");
+    if (!friend || friend === currentUser) {
+      alert("Invalid username");
+      return;
+    }
 
-    db.ref(`requests/${friend}/${currentUser}`).set({
-      from: currentUser,
-      timestamp: Date.now()
+    // Check if user exists
+    db.ref(`users/${friend}`).once('value').then(snapshot => {
+      if (!snapshot.exists()) {
+        alert("User not found");
+        return;
+      }
+      
+      // Check if already friends
+      db.ref(`friends/${currentUser}/${friend}`).once('value').then(friendSnapshot => {
+        if (friendSnapshot.exists()) {
+          alert("You are already friends with this user");
+          return;
+        }
+        
+        // Check if request already sent
+        db.ref(`requests/${friend}/${currentUser}`).once('value').then(requestSnapshot => {
+          if (requestSnapshot.exists()) {
+            alert("Friend request already sent");
+            return;
+          }
+          
+          // Send request
+          db.ref(`requests/${friend}/${currentUser}`).set({
+            from: currentUser,
+            timestamp: Date.now()
+          });
+          
+          document.getElementById("friendName").value = "";
+          showToast(`Friend request sent to ${friend}`);
+        });
+      });
+    }).catch(error => {
+      console.error("Error checking user:", error);
+      alert("Error checking user");
     });
-    
-    document.getElementById("friendName").value = "";
-    showToast(`Friend request sent to ${friend}`);
   }
 
   function loadRequests() {
@@ -526,6 +741,7 @@
       const data = snap.val() || {};
       const list = document.getElementById("friendsList");
       list.innerHTML = "";
+      friendsList = Object.keys(data);
 
       // Clear previous message listeners
       Object.values(messageListeners).forEach(off => off());
@@ -583,6 +799,66 @@
     });
   }
 
+  function loadGroups() {
+    db.ref(`userGroups/${currentUser}`).on("value", snap => {
+      const data = snap.val() || {};
+      const list = document.getElementById("friendsList");
+      
+      // Clear previous group message listeners
+      Object.values(groupMessageListeners).forEach(off => off());
+      groupMessageListeners = {};
+      
+      // Initialize unread messages for each group
+      Object.keys(data).forEach(groupId => {
+        if (!unreadGroupMessages[groupId]) {
+          unreadGroupMessages[groupId] = 0;
+        }
+        
+        // Setup group message listener
+        setupGroupMessageListener(groupId);
+        
+        // Add group to friends list
+        db.ref(`groups/${groupId}`).once("value").then(groupSnapshot => {
+          const groupData = groupSnapshot.val();
+          if (!groupData) return;
+          
+          const li = document.createElement("li");
+          li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative";
+          li.id = `group-${groupId}`;
+          
+          // Count members
+          const memberCount = groupData.members ? Object.keys(groupData.members).length : 0;
+          
+          // Add unread badge if there are unread messages
+          const unreadBadge = unreadGroupMessages[groupId] > 0 
+            ? `<div class="notification-badge">${unreadGroupMessages[groupId]}</div>` 
+            : '';
+          
+          li.innerHTML = `
+            <div class="relative mr-3">
+              <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex justify-between items-center">
+                <span class="font-medium">${groupData.name}</span>
+                <span class="text-xs text-secondary">${formatDate(groupData.createdAt || Date.now())}</span>
+              </div>
+              <p class="text-xs text-secondary truncate">
+                ${memberCount} member${memberCount !== 1 ? 's' : ''}
+              </p>
+            </div>
+            ${unreadBadge}
+          `;
+          
+          li.onclick = () => startGroupChat(groupId);
+          list.appendChild(li);
+        });
+      });
+    });
+  }
+
   function setupMessageListener(friend) {
     const chatKey = [currentUser, friend].sort().join('_');
     
@@ -612,6 +888,38 @@
         // Show notification
         if (document.visibilityState !== 'visible') {
           showMessageNotification(friend, lastMessage.text, lastMessage.timestamp);
+        }
+      }
+    });
+  }
+
+  function setupGroupMessageListener(groupId) {
+    // Remove previous listener if exists
+    if (groupMessageListeners[groupId]) {
+      groupMessageListeners[groupId]();
+    }
+    
+    // Add new listener
+    groupMessageListeners[groupId] = db.ref(`groupMessages/${groupId}`).on("value", snap => {
+      const messages = snap.val() || {};
+      const lastMessage = Object.values(messages).pop();
+      
+      if (!lastMessage) return;
+      
+      // Store last message timestamp for this group
+      lastGroupMessageTimestamps[groupId] = lastMessage.timestamp || Date.now();
+      
+      // If the message is not from current user and group is not open
+      if (lastMessage.from !== currentUser && currentGroup !== groupId) {
+        // Increment unread count
+        unreadGroupMessages[groupId] = (unreadGroupMessages[groupId] || 0) + 1;
+        
+        // Update group list item
+        updateGroupListItem(groupId);
+        
+        // Show notification
+        if (document.visibilityState !== 'visible') {
+          showMessageNotification(lastMessage.from + " (Group)", lastMessage.text, lastMessage.timestamp);
         }
       }
     });
@@ -654,6 +962,44 @@
     });
   }
 
+  function updateGroupListItem(groupId) {
+    const groupItem = document.getElementById(`group-${groupId}`);
+    if (!groupItem) return;
+    
+    db.ref(`groups/${groupId}`).once("value").then(snapshot => {
+      const groupData = snapshot.val();
+      if (!groupData) return;
+      
+      // Count members
+      const memberCount = groupData.members ? Object.keys(groupData.members).length : 0;
+      
+      // Add unread badge if there are unread messages
+      const unreadBadge = unreadGroupMessages[groupId] > 0 
+        ? `<div class="notification-badge">${unreadGroupMessages[groupId]}</div>` 
+        : '';
+      
+      groupItem.innerHTML = `
+        <div class="relative mr-3">
+          <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+            <i class="fas fa-users"></i>
+          </div>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-center">
+            <span class="font-medium">${groupData.name}</span>
+            <span class="text-xs text-secondary">${formatDate(lastGroupMessageTimestamps[groupId] || groupData.createdAt || Date.now())}</span>
+          </div>
+          <p class="text-xs text-secondary truncate">
+            ${memberCount} member${memberCount !== 1 ? 's' : ''}
+          </p>
+        </div>
+        ${unreadBadge}
+      `;
+      
+      groupItem.onclick = () => startGroupChat(groupId);
+    });
+  }
+
   function setupMessageNotifications() {
     // Handle browser tab visibility changes
     document.addEventListener('visibilitychange', function() {
@@ -666,7 +1012,7 @@
 
   function showMessageNotification(sender, message, timestamp) {
     // Update browser tab title
-    document.title = `(${unreadMessages[sender]}) New message from ${sender} | MessageMe`;
+    document.title = `(${unreadMessages[sender] || unreadGroupMessages[sender] || 1}) New message from ${sender} | MessageMe`;
     
     // Show popup notification
     const popup = document.getElementById("notificationPopup");
@@ -688,7 +1034,9 @@
 
   function startChat(user) {
     chattingWith = user;
+    currentGroup = "";
     document.getElementById("chatSection").classList.remove("hidden");
+    document.getElementById("groupChatSection").classList.add("hidden");
     document.getElementById("emptyState").classList.add("hidden");
     document.getElementById("chatWith").textContent = user;
     document.getElementById("chatWithInitial").textContent = user.charAt(0).toUpperCase();
@@ -734,6 +1082,64 @@
     });
   }
 
+  function startGroupChat(groupId) {
+    currentGroup = groupId;
+    chattingWith = "";
+    document.getElementById("chatSection").classList.add("hidden");
+    document.getElementById("groupChatSection").classList.remove("hidden");
+    document.getElementById("emptyState").classList.add("hidden");
+    
+    // Reset unread count for this group
+    unreadGroupMessages[groupId] = 0;
+    updateGroupListItem(groupId);
+    
+    // Update browser title
+    document.title = "MessageMe";
+    
+    // Update responsive behavior
+    document.querySelector('.w-80').classList.add('hidden', 'md:block');
+    
+    // Load group info
+    db.ref(`groups/${groupId}`).once("value").then(snapshot => {
+      const groupData = snapshot.val();
+      if (!groupData) return;
+      
+      document.getElementById("groupChatName").textContent = groupData.name;
+      
+      // Count members
+      const memberCount = groupData.members ? Object.keys(groupData.members).length : 0;
+      document.getElementById("groupMembersCount").textContent = `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
+    });
+    
+    // Load group messages
+    db.ref(`groupMessages/${groupId}`).on("value", snap => {
+      const chatBox = document.getElementById("groupChatBox");
+      chatBox.innerHTML = "";
+      const data = snap.val() || {};
+      allGroupMessages[groupId] = data; // Store messages for search
+      
+      Object.entries(data).forEach(([key, msg]) => {
+        const isSent = msg.from === currentUser;
+        const div = document.createElement("div");
+        div.className = `flex ${isSent ? 'justify-end' : 'justify-start'}`;
+        
+        div.innerHTML = `
+          <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
+            <p class="font-bold ${!isSent ? 'text-purple-500' : ''}">${isSent ? 'You' : msg.from}</p>
+            <p>${msg.text}</p>
+            <p class="text-xs mt-1 ${isSent ? 'text-blue-100' : 'text-secondary'} text-right">
+              ${formatTime(msg.timestamp || Date.now())}
+            </p>
+          </div>
+        `;
+        
+        chatBox.appendChild(div);
+      });
+      
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  }
+
   function searchMessages() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     if (!searchTerm) return;
@@ -747,6 +1153,22 @@
           foundMessages.push({
             friend,
             message: msg
+          });
+        }
+      });
+    });
+    
+    // Search through group messages
+    Object.entries(allGroupMessages).forEach(([groupId, messages]) => {
+      Object.entries(messages).forEach(([key, msg]) => {
+        if (msg.text.toLowerCase().includes(searchTerm)) {
+          db.ref(`groups/${groupId}`).once("value").then(snapshot => {
+            const groupData = snapshot.val();
+            foundMessages.push({
+              groupId,
+              groupName: groupData.name,
+              message: msg
+            });
           });
         }
       });
@@ -776,21 +1198,42 @@
         match => `<span class="search-highlight">${match}</span>`
       );
       
-      div.innerHTML = `
-        <div class="max-w-xs">
-          <div class="text-xs text-secondary mb-1">
-            Chat with ${item.friend} • ${formatTime(item.message.timestamp)}
+      if (item.groupId) {
+        // Group message result
+        div.innerHTML = `
+          <div class="max-w-xs">
+            <div class="text-xs text-secondary mb-1">
+              Group: ${item.groupName} • ${formatTime(item.message.timestamp)}
+            </div>
+            <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
+              <p class="font-bold ${!isSent ? 'text-purple-500' : ''}">${isSent ? 'You' : item.message.from}</p>
+              <p>${messageText}</p>
+            </div>
           </div>
-          <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
-            <p>${messageText}</p>
+        `;
+        
+        div.onclick = () => {
+          startGroupChat(item.groupId);
+          document.getElementById('searchInput').value = '';
+        };
+      } else {
+        // Private message result
+        div.innerHTML = `
+          <div class="max-w-xs">
+            <div class="text-xs text-secondary mb-1">
+              Chat with ${item.friend} • ${formatTime(item.message.timestamp)}
+            </div>
+            <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
+              <p>${messageText}</p>
+            </div>
           </div>
-        </div>
-      `;
-      
-      div.onclick = () => {
-        startChat(item.friend);
-        document.getElementById('searchInput').value = '';
-      };
+        `;
+        
+        div.onclick = () => {
+          startChat(item.friend);
+          document.getElementById('searchInput').value = '';
+        };
+      }
       
       chatBox.appendChild(div);
     });
@@ -839,9 +1282,15 @@
     if (friendStatusInterval) clearInterval(friendStatusInterval);
   }
 
+  function hideGroupChat() {
+    document.getElementById("groupChatSection").classList.add("hidden");
+    document.getElementById("emptyState").classList.remove("hidden");
+    document.querySelector('.w-80').classList.remove('hidden');
+  }
+
   function sendMessage() {
     const text = document.getElementById("message").value.trim();
-    if (!text) return;
+    if (!text || !chattingWith) return;
 
     const chatKey = [currentUser, chattingWith].sort().join('_');
     db.ref(`messages/${chatKey}`).push({ 
@@ -851,6 +1300,19 @@
     });
     
     document.getElementById("message").value = "";
+  }
+
+  function sendGroupMessage() {
+    const text = document.getElementById("groupMessage").value.trim();
+    if (!text || !currentGroup) return;
+
+    db.ref(`groupMessages/${currentGroup}`).push({ 
+      from: currentUser, 
+      text,
+      timestamp: Date.now()
+    });
+    
+    document.getElementById("groupMessage").value = "";
   }
 
   function toggleTheme() {
@@ -905,21 +1367,135 @@
     }, 3000);
   }
 
-  // Toggle user menu
+  // Group creation functions
+  function showCreateGroupModal() {
+    const modal = document.getElementById("createGroupModal");
+    modal.classList.add("show");
+    
+    // Populate friends list
+    const friendsSelect = document.getElementById("friendsSelectList");
+    friendsSelect.innerHTML = "";
+    
+    friendsList.forEach(friend => {
+      const item = document.createElement("div");
+      item.className = "friend-select-item";
+      item.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs mr-2">
+          ${friend.charAt(0).toUpperCase()}
+        </div>
+        <span>${friend}</span>
+      `;
+      
+      item.onclick = () => {
+        item.classList.toggle("selected");
+        if (item.classList.contains("selected")) {
+          if (!selectedFriendsForGroup.includes(friend)) {
+            selectedFriendsForGroup.push(friend);
+          }
+        } else {
+          selectedFriendsForGroup = selectedFriendsForGroup.filter(f => f !== friend);
+        }
+        updateSelectedFriendsDisplay();
+      };
+      
+      friendsSelect.appendChild(item);
+    });
+  }
+
+  function closeCreateGroupModal() {
+    document.getElementById("createGroupModal").classList.remove("show");
+    document.getElementById("groupNameInput").value = "";
+    selectedFriendsForGroup = [];
+    document.getElementById("selectedFriends").innerHTML = "";
+  }
+
+  function updateSelectedFriendsDisplay() {
+    const container = document.getElementById("selectedFriends");
+    container.innerHTML = "";
+    
+    selectedFriendsForGroup.forEach(friend => {
+      const tag = document.createElement("div");
+      tag.className = "group-member-tag";
+      tag.innerHTML = `
+        ${friend}
+        <i class="fas fa-times" onclick="removeSelectedFriend('${friend}')"></i>
+      `;
+      container.appendChild(tag);
+    });
+  }
+
+  function removeSelectedFriend(friend) {
+    selectedFriendsForGroup = selectedFriendsForGroup.filter(f => f !== friend);
+    updateSelectedFriendsDisplay();
+    
+    // Also unselect from the list
+    const items = document.querySelectorAll(".friend-select-item");
+    items.forEach(item => {
+      if (item.textContent.includes(friend)) {
+        item.classList.remove("selected");
+      }
+    });
+  }
+
+  function createGroup() {
+    const groupName = document.getElementById("groupNameInput").value.trim();
+    if (!groupName) {
+      alert("Please enter a group name");
+      return;
+    }
+    
+    if (selectedFriendsForGroup.length === 0) {
+      alert("Please select at least one friend");
+      return;
+    }
+    
+    // Create group
+    const groupRef = db.ref("groups").push();
+    const groupId = groupRef.key;
+    
+    // Prepare members object (including current user)
+    const members = {};
+    members[currentUser] = true;
+    selectedFriendsForGroup.forEach(friend => {
+      members[friend] = true;
+    });
+    
+    // Set group data
+    groupRef.set({
+      name: groupName,
+      createdAt: Date.now(),
+      createdBy: currentUser,
+      members: members
+    });
+    
+    // Add group to each user's groups
+    Object.keys(members).forEach(user => {
+      db.ref(`userGroups/${user}/${groupId}`).set(true);
+    });
+    
+    // Close modal and reset
+    closeCreateGroupModal();
+    showToast(`Group "${groupName}" created successfully`);
+    
+    // Start chatting in the new group
+    startGroupChat(groupId);
+  }
+
+  // Event listeners
   document.getElementById("userMenuBtn").addEventListener("click", function(e) {
     e.stopPropagation();
     document.getElementById("userMenu").classList.toggle("hidden");
   });
 
-  // Close user menu when clicking outside
   document.addEventListener("click", function() {
     document.getElementById("userMenu").classList.add("hidden");
   });
 
-  // Prevent menu from closing when clicking inside it
   document.getElementById("userMenu").addEventListener("click", function(e) {
     e.stopPropagation();
   });
+
+  document.getElementById("createGroupBtn").addEventListener("click", showCreateGroupModal);
 </script>
 </body>
 </html>
