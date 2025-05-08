@@ -2,21 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>MessageMe</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    .theme-light {
+    :root {
       --bg-primary: #ffffff;
       --bg-secondary: #f0f2f5;
       --text-primary: #050505;
       --text-secondary: #65676b;
       --accent: #1877f2;
       --border: #dddfe2;
+      --online: #31a24c;
+      --notification: #ff3b30;
+      --group: #8a2be2;
     }
+
     .theme-dark {
       --bg-primary: #242526;
       --bg-secondary: #18191a;
@@ -24,126 +28,159 @@
       --text-secondary: #b0b3b8;
       --accent: #2d88ff;
       --border: #3e4042;
+      --online: #31a24c;
+      --notification: #ff3b30;
+      --group: #9b51e0;
     }
+
     body {
       background-color: var(--bg-secondary);
       color: var(--text-primary);
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
     }
+
     .bg-primary {
       background-color: var(--bg-primary);
     }
+
     .bg-secondary {
       background-color: var(--bg-secondary);
     }
+
     .text-primary {
       color: var(--text-primary);
     }
+
     .text-secondary {
       color: var(--text-secondary);
     }
+
     .border-primary {
       border-color: var(--border);
     }
+
     .accent {
       background-color: var(--accent);
     }
+
     .chat-bubble {
-      max-width: 70%;
-      padding: 8px 12px;
+      max-width: 80%;
+      padding: 10px 14px;
       border-radius: 18px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      word-break: break-word;
     }
+
     .chat-bubble.sent {
       background-color: var(--accent);
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 4px;
     }
+
     .chat-bubble.received {
       background-color: var(--bg-secondary);
       margin-right: auto;
       border-bottom-left-radius: 4px;
     }
+
     .online-dot {
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
-      background-color: #31a24c;
+      background-color: var(--online);
       position: absolute;
       bottom: 0;
       right: 0;
       border: 2px solid var(--bg-primary);
     }
+
     .active-friend {
       background-color: rgba(45, 136, 255, 0.1);
     }
+
     .logo {
       background: linear-gradient(135deg, #00b4ff 0%, #0066ff 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: 800;
     }
+
     .search-highlight {
       background-color: rgba(0, 180, 255, 0.2);
+      padding: 0 2px;
+      border-radius: 3px;
     }
+
     .notification-badge {
       position: absolute;
       top: -5px;
       right: -5px;
-      background-color: #ff3b30;
+      background-color: var(--notification);
       color: white;
       border-radius: 50%;
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: bold;
     }
+
     .notification-popup {
       position: fixed;
       bottom: 20px;
       right: 20px;
       background-color: var(--bg-primary);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      width: 250px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      padding: 14px;
+      width: 280px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       z-index: 1000;
       transform: translateY(100px);
       opacity: 0;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+
     .notification-popup.show {
       transform: translateY(0);
       opacity: 1;
     }
+
     .notification-popup .sender {
       font-weight: bold;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      color: var(--text-primary);
     }
+
     .notification-popup .message {
       font-size: 14px;
       color: var(--text-secondary);
       margin-bottom: 8px;
+      line-height: 1.4;
     }
+
     .notification-popup .time {
       font-size: 12px;
       color: var(--text-secondary);
       text-align: right;
     }
+
     .notification-popup .close-btn {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 10px;
+      right: 10px;
       background: none;
       border: none;
       color: var(--text-secondary);
       cursor: pointer;
+      font-size: 14px;
     }
+
     .modal {
       position: fixed;
       top: 0;
@@ -158,134 +195,267 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
+      backdrop-filter: blur(5px);
     }
+
     .modal.show {
       opacity: 1;
       pointer-events: auto;
     }
+
     .modal-content {
       background-color: var(--bg-primary);
-      border-radius: 8px;
+      border-radius: 14px;
       width: 90%;
       max-width: 400px;
       max-height: 80vh;
       overflow-y: auto;
       padding: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
     }
+
+    .modal.show .modal-content {
+      transform: translateY(0);
+    }
+
     .friend-select-item {
       display: flex;
       align-items: center;
-      padding: 8px;
-      border-radius: 4px;
-      margin-bottom: 4px;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 6px;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
+
     .friend-select-item:hover {
       background-color: var(--bg-secondary);
     }
+
     .friend-select-item.selected {
       background-color: rgba(45, 136, 255, 0.2);
     }
+
     .group-member-tag {
       display: inline-flex;
       align-items: center;
       background-color: var(--bg-secondary);
-      padding: 4px 8px;
-      border-radius: 16px;
-      margin-right: 4px;
-      margin-bottom: 4px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      margin-right: 6px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      transition: all 0.2s ease;
     }
+
     .group-member-tag i {
-      margin-left: 4px;
+      margin-left: 6px;
       cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
     }
+
     .group-icon {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background-color: var(--accent);
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 18px;
       cursor: pointer;
-      margin-left: 8px;
-      transition: transform 0.2s ease;
+      margin-left: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
+
     .group-icon:hover {
       transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
+    .group-icon:active {
+      transform: scale(0.95);
+    }
+
+    /* Mobile Responsiveness */
     @media (max-width: 768px) {
       .w-80 {
         width: 100%;
-        position: absolute;
-        z-index: 10;
-        height: 100%;
-        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 20;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
       }
+
       .w-80.show {
-        display: block;
+        transform: translateX(0);
       }
+
       .chat-section {
         display: none;
       }
+
       .chat-section.active {
         display: flex;
       }
+
+      .chat-bubble {
+        max-width: 85%;
+      }
+
+      .notification-popup {
+        width: 90%;
+        right: 5%;
+        bottom: 80px;
+      }
     }
+
+    /* Enhanced UI Elements */
     .user-menu-item {
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      padding: 10px 16px;
+      border-radius: 6px;
     }
+
     .user-menu-item:hover {
       background-color: var(--bg-secondary);
     }
+
     .message-input {
-      transition: box-shadow 0.2s ease;
+      transition: all 0.2s ease;
+      padding: 12px 16px;
+      font-size: 15px;
     }
+
     .message-input:focus {
       box-shadow: 0 0 0 2px var(--accent);
     }
+
     .friend-item {
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      padding: 12px 16px;
     }
+
     .friend-item:hover {
       background-color: var(--bg-secondary);
     }
+
     .request-item {
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
     }
+
     .request-item:hover {
       background-color: var(--bg-secondary);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: white;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #166fe5;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--text-secondary);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Animation Classes */
+    .fade-in {
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .slide-up {
+      animation: slideUp 0.3s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Pulsing animation for notifications */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .pulse {
+      animation: pulse 0.5s ease infinite;
     }
   </style>
 </head>
 <body class="theme-light">
-  <div id="app" class="h-screen flex flex-col">
+  <div id="app" class="h-screen flex flex-col overflow-hidden">
     <!-- Login Screen -->
-    <div id="login" class="flex items-center justify-center h-full">
-      <div class="bg-primary p-8 rounded-lg shadow-lg w-96">
+    <div id="login" class="flex items-center justify-center h-full p-4">
+      <div class="bg-primary p-8 rounded-xl shadow-xl w-full max-w-md">
         <div class="text-center mb-8">
           <div class="flex items-center justify-center mb-4">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white shadow-lg">
               <i class="fas fa-comment-alt text-3xl"></i>
             </div>
           </div>
-          <h1 class="text-3xl font-bold logo">MessageMe</h1>
-          <p class="text-secondary mt-2">Connect with friends and family</p>
+          <h1 class="text-3xl font-bold logo mb-2">MessageMe</h1>
+          <p class="text-secondary">Connect with friends and family</p>
         </div>
-        <div class="mb-4">
+        <div class="mb-6">
           <input 
             type="text" 
             id="username" 
             placeholder="Enter username" 
-            class="w-full p-3 border-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-primary text-primary"
+            class="w-full p-4 border-primary border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-primary text-primary message-input"
+            autocomplete="username"
           />
         </div>
         <button 
           onclick="loginUser()" 
-          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200"
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-4 rounded-xl transition duration-200 btn-primary"
         >
           Login
         </button>
@@ -295,31 +465,31 @@
     <!-- Main Dashboard -->
     <div id="dashboard" class="hidden h-full flex flex-col">
       <!-- Header -->
-      <header class="bg-primary border-b border-primary py-3 px-4 flex justify-between items-center">
+      <header class="bg-primary border-b border-primary py-3 px-4 flex justify-between items-center shadow-sm">
         <div class="flex items-center">
-          <button id="menuToggle" class="md:hidden mr-2 text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center">
-            <i class="fas fa-bars"></i>
+          <button id="menuToggle" class="md:hidden mr-2 text-secondary hover:bg-secondary w-10 h-10 rounded-full flex items-center justify-center">
+            <i class="fas fa-bars text-lg"></i>
           </button>
-          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white mr-2">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white shadow-md">
             <i class="fas fa-comment-alt text-sm"></i>
           </div>
-          <h1 class="text-xl font-bold logo">MessageMe</h1>
+          <h1 class="text-xl font-bold logo ml-2">MessageMe</h1>
         </div>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3">
           <div class="flex items-center relative">
-            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow-md">
               <span id="currentUserInitial">U</span>
             </div>
             <span class="ml-2 font-medium hidden md:inline" id="currentUser"></span>
             <div id="createGroupBtn" class="group-icon hidden">
               <i class="fas fa-users"></i>
             </div>
-            <div id="userMenuBtn" class="ml-2 cursor-pointer">
-              <i class="fas fa-chevron-down text-secondary text-sm"></i>
+            <div id="userMenuBtn" class="ml-2 cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary">
+              <i class="fas fa-chevron-down text-secondary"></i>
             </div>
-            <div id="userMenu" class="absolute right-0 top-10 bg-primary border border-primary rounded-lg shadow-lg w-48 z-50 hidden">
+            <div id="userMenu" class="absolute right-0 top-12 bg-primary border border-primary rounded-xl shadow-xl w-48 z-50 hidden slide-up">
               <ul class="py-1">
-                <li class="px-4 py-2 user-menu-item" id="logoutBtn">
+                <li class="px-4 py-3 user-menu-item" id="logoutBtn">
                   <i class="fas fa-sign-out-alt mr-2"></i> Logout
                 </li>
               </ul>
@@ -327,7 +497,7 @@
           </div>
           <button 
             onclick="toggleTheme()" 
-            class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary"
             title="Toggle theme"
           >
             <i class="fas fa-moon"></i>
@@ -336,9 +506,9 @@
       </header>
 
       <!-- Main Content -->
-      <div class="flex flex-1 overflow-hidden">
+      <div class="flex flex-1 overflow-hidden relative">
         <!-- Sidebar -->
-        <div id="sidebar" class="w-80 border-r border-primary bg-primary flex flex-col md:block">
+        <div id="sidebar" class="w-80 border-r border-primary bg-primary flex flex-col md:block absolute md:relative h-full z-10">
           <!-- Search -->
           <div class="p-3 border-b border-primary">
             <div class="relative">
@@ -346,21 +516,21 @@
                 type="text" 
                 id="searchInput" 
                 placeholder="Search messages" 
-                class="w-full bg-secondary text-primary py-2 px-4 pl-10 rounded-lg focus:outline-none message-input"
+                class="w-full bg-secondary text-primary py-3 px-4 pl-12 rounded-xl focus:outline-none message-input"
                 oninput="searchMessages()"
               />
-              <i class="fas fa-search absolute left-3 top-3 text-secondary"></i>
+              <i class="fas fa-search absolute left-4 top-4 text-secondary"></i>
             </div>
           </div>
 
           <!-- Friend Requests Section -->
           <div class="p-3 border-b border-primary">
             <div class="flex justify-between items-center mb-2">
-              <h3 class="font-semibold">Friend Requests</h3>
+              <h3 class="font-semibold text-lg">Friend Requests</h3>
               <div class="flex items-center">
                 <span id="requestCount" class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full mr-2 hidden">0</span>
                 <button onclick="toggleRequests()" class="text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center">
-                  <i class="fas fa-chevron-down text-sm"></i>
+                  <i class="fas fa-chevron-down"></i>
                 </button>
               </div>
             </div>
@@ -369,23 +539,23 @@
 
           <!-- Friends List -->
           <div class="flex-1 overflow-y-auto">
-            <h3 class="font-semibold p-3">Friends</h3>
+            <h3 class="font-semibold p-3 text-lg">Chats</h3>
             <ul id="friendsList" class="space-y-1"></ul>
           </div>
 
           <!-- Add Friend Section -->
           <div class="p-3 border-t border-primary">
-            <h3 class="font-semibold mb-2">Add Friend</h3>
+            <h3 class="font-semibold mb-2 text-lg">Add Friend</h3>
             <div class="flex">
               <input 
                 type="text" 
                 id="friendName" 
                 placeholder="Friend username" 
-                class="flex-1 bg-secondary text-primary py-2 px-3 rounded-l-lg focus:outline-none message-input"
+                class="flex-1 bg-secondary text-primary py-3 px-4 rounded-l-xl focus:outline-none message-input"
               />
               <button 
                 onclick="sendRequest()" 
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded-r-lg transition"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded-r-xl transition btn-primary"
                 title="Send friend request"
               >
                 <i class="fas fa-user-plus"></i>
@@ -395,49 +565,49 @@
         </div>
 
         <!-- Chat Area -->
-        <div id="chatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section">
+        <div id="chatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section h-full">
           <!-- Chat Header -->
-          <div class="bg-primary border-b border-primary p-3 flex items-center">
+          <div class="bg-primary border-b border-primary p-3 flex items-center shadow-sm">
             <button 
               id="backButton" 
               onclick="hideChat()" 
-              class="md:hidden mr-2 text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center"
+              class="md:hidden mr-2 text-secondary hover:bg-secondary w-10 h-10 rounded-full flex items-center justify-center"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
             <div class="flex items-center">
               <div class="relative">
-                <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
-                  <span id="chatWithInitial">F</span>
+                <div class="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white shadow-md">
+                  <span id="chatWithInitial" class="text-xl">F</span>
                 </div>
                 <div id="friendStatus" class="online-dot hidden"></div>
               </div>
               <div class="ml-3">
-                <h2 id="chatWith" class="font-semibold"></h2>
+                <h2 id="chatWith" class="font-semibold text-lg"></h2>
                 <p id="friendStatusText" class="text-xs text-secondary">Offline</p>
               </div>
             </div>
           </div>
 
           <!-- Messages -->
-          <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-2"></div>
+          <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
 
           <!-- Message Input -->
-          <div class="bg-primary border-t border-primary p-3">
+          <div class="bg-primary border-t border-primary p-3 shadow-md">
             <div class="flex items-center">
-              <button class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+              <button class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary">
                 <i class="fas fa-plus text-secondary"></i>
               </button>
               <input 
                 type="text" 
                 id="message" 
                 placeholder="Type a message" 
-                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none message-input"
+                class="flex-1 bg-secondary text-primary py-3 px-4 rounded-xl focus:outline-none message-input"
                 onkeypress="if(event.keyCode === 13) sendMessage()"
               />
               <button 
                 onclick="sendMessage()" 
-                class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white ml-2 hover:bg-blue-600 transition"
+                class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white ml-2 hover:bg-blue-600 transition btn-primary"
                 title="Send message"
               >
                 <i class="fas fa-paper-plane"></i>
@@ -447,48 +617,48 @@
         </div>
 
         <!-- Group Chat Area -->
-        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section">
+        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section h-full">
           <!-- Group Chat Header -->
-          <div class="bg-primary border-b border-primary p-3 flex items-center">
+          <div class="bg-primary border-b border-primary p-3 flex items-center shadow-sm">
             <button 
               id="backButtonGroup" 
               onclick="hideGroupChat()" 
-              class="md:hidden mr-2 text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center"
+              class="md:hidden mr-2 text-secondary hover:bg-secondary w-10 h-10 rounded-full flex items-center justify-center"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
             <div class="flex items-center">
               <div class="relative">
-                <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
-                  <i class="fas fa-users"></i>
+                <div class="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-md">
+                  <i class="fas fa-users text-lg"></i>
                 </div>
               </div>
               <div class="ml-3">
-                <h2 id="groupChatName" class="font-semibold"></h2>
+                <h2 id="groupChatName" class="font-semibold text-lg"></h2>
                 <p id="groupMembersCount" class="text-xs text-secondary">0 members</p>
               </div>
             </div>
           </div>
 
           <!-- Group Messages -->
-          <div id="groupChatBox" class="flex-1 p-4 overflow-y-auto space-y-2"></div>
+          <div id="groupChatBox" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
 
           <!-- Group Message Input -->
-          <div class="bg-primary border-t border-primary p-3">
+          <div class="bg-primary border-t border-primary p-3 shadow-md">
             <div class="flex items-center">
-              <button class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+              <button class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary">
                 <i class="fas fa-plus text-secondary"></i>
               </button>
               <input 
                 type="text" 
                 id="groupMessage" 
                 placeholder="Type a message" 
-                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none message-input"
+                class="flex-1 bg-secondary text-primary py-3 px-4 rounded-xl focus:outline-none message-input"
                 onkeypress="if(event.keyCode === 13) sendGroupMessage()"
               />
               <button 
                 onclick="sendGroupMessage()" 
-                class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white ml-2 hover:bg-blue-600 transition"
+                class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white ml-2 hover:bg-blue-600 transition btn-primary"
                 title="Send message"
               >
                 <i class="fas fa-paper-plane"></i>
@@ -499,15 +669,15 @@
 
         <!-- Empty State -->
         <div id="emptyState" class="flex-1 flex items-center justify-center bg-secondary">
-          <div class="text-center p-6">
-            <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-comment-dots text-3xl text-secondary"></i>
+          <div class="text-center p-6 max-w-md">
+            <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+              <i class="fas fa-comment-dots text-4xl text-secondary"></i>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Your messages</h3>
-            <p class="text-secondary mb-6">Select a friend to start chatting</p>
+            <h3 class="text-2xl font-semibold mb-3">Your messages</h3>
+            <p class="text-secondary mb-6">Select a friend or group to start chatting</p>
             <button 
               onclick="document.getElementById('friendName').focus()" 
-              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+              class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl transition btn-primary"
             >
               <i class="fas fa-user-plus mr-2"></i>Add Friend
             </button>
@@ -529,37 +699,42 @@
     <!-- Create Group Modal -->
     <div id="createGroupModal" class="modal">
       <div class="modal-content">
-        <h3 class="font-bold text-lg mb-4">Create New Group</h3>
+        <h3 class="font-bold text-xl mb-4">Create New Group</h3>
         <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">Group Name</label>
+          <label class="block text-sm font-medium mb-2">Group Name</label>
           <input 
             type="text" 
             id="groupNameInput" 
             placeholder="Enter group name" 
-            class="w-full bg-secondary text-primary py-2 px-3 rounded-lg focus:outline-none message-input"
+            class="w-full bg-secondary text-primary py-3 px-4 rounded-xl focus:outline-none message-input"
           />
         </div>
         <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">Select Friends</label>
-          <div id="selectedFriends" class="flex flex-wrap mb-2"></div>
+          <label class="block text-sm font-medium mb-2">Select Friends</label>
+          <div id="selectedFriends" class="flex flex-wrap mb-3"></div>
           <div id="friendsSelectList" class="max-h-40 overflow-y-auto"></div>
         </div>
-        <div class="flex justify-end space-x-2">
+        <div class="flex justify-end space-x-3">
           <button 
             onclick="closeCreateGroupModal()" 
-            class="px-4 py-2 rounded-lg bg-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            class="px-5 py-3 rounded-xl bg-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary"
           >
             Cancel
           </button>
           <button 
             onclick="createGroup()" 
-            class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition"
+            class="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition btn-primary"
           >
             Create Group
           </button>
         </div>
       </div>
     </div>
+
+    <!-- Audio element for notification sound -->
+    <audio id="notificationSound" preload="auto">
+      <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
+    </audio>
   </div>
 
 <script>
@@ -591,6 +766,7 @@
   let lastGroupMessageTimestamps = {};
   let selectedFriendsForGroup = [];
   let friendsList = [];
+  let isMobile = window.innerWidth <= 768;
 
   // Check for existing session on page load
   document.addEventListener('DOMContentLoaded', function() {
@@ -610,11 +786,27 @@
     document.getElementById('menuToggle').addEventListener('click', function() {
       document.getElementById('sidebar').classList.toggle('show');
     });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      isMobile = window.innerWidth <= 768;
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+      if (isMobile && !document.getElementById('sidebar').contains(e.target) && 
+          !document.getElementById('menuToggle').contains(e.target)) {
+        document.getElementById('sidebar').classList.remove('show');
+      }
+    });
   });
 
   function loginUser() {
     const user = document.getElementById("username").value.trim();
-    if (!user) return alert("Please enter a username");
+    if (!user) {
+      showToast("Please enter a username");
+      return;
+    }
 
     currentUser = user;
     document.getElementById("currentUser").textContent = user;
@@ -690,28 +882,28 @@
   function sendRequest() {
     const friend = document.getElementById("friendName").value.trim();
     if (!friend || friend === currentUser) {
-      alert("Invalid username");
+      showToast("Invalid username");
       return;
     }
 
     // Check if user exists
     db.ref(`users/${friend}`).once('value').then(snapshot => {
       if (!snapshot.exists()) {
-        alert("User not found");
+        showToast("User not found");
         return;
       }
       
       // Check if already friends
       db.ref(`friends/${currentUser}/${friend}`).once('value').then(friendSnapshot => {
         if (friendSnapshot.exists()) {
-          alert("You are already friends with this user");
+          showToast("You are already friends with this user");
           return;
         }
         
         // Check if request already sent
         db.ref(`requests/${friend}/${currentUser}`).once('value').then(requestSnapshot => {
           if (requestSnapshot.exists()) {
-            alert("Friend request already sent");
+            showToast("Friend request already sent");
             return;
           }
           
@@ -727,7 +919,7 @@
       });
     }).catch(error => {
       console.error("Error checking user:", error);
-      alert("Error checking user");
+      showToast("Error checking user");
     });
   }
 
@@ -749,11 +941,11 @@
 
       Object.entries(data).forEach(([requester, requestData]) => {
         const li = document.createElement("li");
-        li.className = "flex items-center justify-between p-2 hover:bg-secondary rounded-lg transition request-item";
+        li.className = "flex items-center justify-between p-3 hover:bg-secondary rounded-lg transition request-item";
         
         li.innerHTML = `
           <div class="flex items-center">
-            <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white mr-2">
+            <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white mr-3 shadow-sm">
               ${requester.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -762,10 +954,10 @@
             </div>
           </div>
           <div class="flex space-x-2">
-            <button onclick="acceptRequest('${requester}')" class="text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded-lg text-sm transition">
+            <button onclick="acceptRequest('${requester}')" class="text-white bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-lg text-sm transition btn-primary">
               Accept
             </button>
-            <button onclick="declineRequest('${requester}')" class="text-secondary hover:bg-secondary px-2 py-1 rounded-lg text-sm transition">
+            <button onclick="declineRequest('${requester}')" class="text-secondary hover:bg-secondary px-3 py-2 rounded-lg text-sm transition btn-secondary">
               Decline
             </button>
           </div>
@@ -812,7 +1004,7 @@
 
       Object.entries(data).forEach(([friend, friendData]) => {
         const li = document.createElement("li");
-        li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative friend-item";
+        li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition friend-item relative";
         li.id = `friend-${friend}`;
         
         const friendRef = db.ref(`users/${friend}`);
@@ -827,15 +1019,15 @@
           
           li.innerHTML = `
             <div class="relative mr-3">
-              <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
+              <div class="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white shadow-sm">
                 ${friend.charAt(0).toUpperCase()}
               </div>
               ${isActive ? '<div class="online-dot"></div>' : ''}
             </div>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
               <div class="flex justify-between items-center">
-                <span class="font-medium">${friend}</span>
-                <span class="text-xs text-secondary">${formatDate(friendData.since)}</span>
+                <span class="font-medium truncate">${friend}</span>
+                <span class="text-xs text-secondary whitespace-nowrap ml-2">${formatDate(friendData.since)}</span>
               </div>
               <p class="text-xs text-secondary truncate">
                 ${isActive ? 'Active now' : 'Last seen recently'}
@@ -846,7 +1038,9 @@
           
           li.onclick = () => {
             startChat(friend);
-            document.getElementById('sidebar').classList.remove('show');
+            if (isMobile) {
+              document.getElementById('sidebar').classList.remove('show');
+            }
           };
         });
         
@@ -882,7 +1076,7 @@
           if (!groupData) return;
           
           const li = document.createElement("li");
-          li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative friend-item";
+          li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition friend-item relative";
           li.id = `group-${groupId}`;
           
           // Count members
@@ -895,14 +1089,14 @@
           
           li.innerHTML = `
             <div class="relative mr-3">
-              <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+              <div class="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-sm">
                 <i class="fas fa-users"></i>
               </div>
             </div>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
               <div class="flex justify-between items-center">
-                <span class="font-medium">${groupData.name}</span>
-                <span class="text-xs text-secondary">${formatDate(groupData.createdAt || Date.now())}</span>
+                <span class="font-medium truncate">${groupData.name}</span>
+                <span class="text-xs text-secondary whitespace-nowrap ml-2">${formatDate(groupData.createdAt || Date.now())}</span>
               </div>
               <p class="text-xs text-secondary truncate">
                 ${memberCount} member${memberCount !== 1 ? 's' : ''}
@@ -913,7 +1107,9 @@
           
           li.onclick = () => {
             startGroupChat(groupId);
-            document.getElementById('sidebar').classList.remove('show');
+            if (isMobile) {
+              document.getElementById('sidebar').classList.remove('show');
+            }
           };
           list.appendChild(li);
         });
@@ -999,15 +1195,15 @@
       
       friendItem.innerHTML = `
         <div class="relative mr-3">
-          <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white">
+          <div class="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white shadow-sm">
             ${friend.charAt(0).toUpperCase()}
           </div>
           ${isActive ? '<div class="online-dot"></div>' : ''}
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <div class="flex justify-between items-center">
-            <span class="font-medium">${friend}</span>
-            <span class="text-xs text-secondary">${formatDate(lastMessageTimestamps[friend] || Date.now())}</span>
+            <span class="font-medium truncate">${friend}</span>
+            <span class="text-xs text-secondary whitespace-nowrap ml-2">${formatDate(lastMessageTimestamps[friend] || Date.now())}</span>
           </div>
           <p class="text-xs text-secondary truncate">
             ${isActive ? 'Active now' : 'Last seen recently'}
@@ -1018,7 +1214,9 @@
       
       friendItem.onclick = () => {
         startChat(friend);
-        document.getElementById('sidebar').classList.remove('show');
+        if (isMobile) {
+          document.getElementById('sidebar').classList.remove('show');
+        }
       };
     });
   }
@@ -1041,14 +1239,14 @@
       
       groupItem.innerHTML = `
         <div class="relative mr-3">
-          <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white">
+          <div class="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-sm">
             <i class="fas fa-users"></i>
           </div>
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <div class="flex justify-between items-center">
-            <span class="font-medium">${groupData.name}</span>
-            <span class="text-xs text-secondary">${formatDate(lastGroupMessageTimestamps[groupId] || groupData.createdAt || Date.now())}</span>
+            <span class="font-medium truncate">${groupData.name}</span>
+            <span class="text-xs text-secondary whitespace-nowrap ml-2">${formatDate(lastGroupMessageTimestamps[groupId] || groupData.createdAt || Date.now())}</span>
           </div>
           <p class="text-xs text-secondary truncate">
             ${memberCount} member${memberCount !== 1 ? 's' : ''}
@@ -1059,7 +1257,9 @@
       
       groupItem.onclick = () => {
         startGroupChat(groupId);
-        document.getElementById('sidebar').classList.remove('show');
+        if (isMobile) {
+          document.getElementById('sidebar').classList.remove('show');
+        }
       };
     });
   }
@@ -1082,13 +1282,18 @@
     // Show popup notification
     const popup = document.getElementById("notificationPopup");
     popup.querySelector('.sender').textContent = sender;
-    popup.querySelector('.message').textContent = message.length > 50 ? message.substring(0, 50) + '...' : message;
+    popup.querySelector('.message').textContent = message.length > 80 ? message.substring(0, 80) + '...' : message;
     popup.querySelector('.time').textContent = formatTime(timestamp);
     
     popup.classList.add("show");
     
     // Play notification sound
     playNotificationSound();
+    
+    // Vibrate if on mobile
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
     
     // Auto hide after 5 seconds
     setTimeout(() => {
@@ -1097,8 +1302,9 @@
   }
 
   function playNotificationSound() {
-    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
-    audio.volume = 0.2;
+    const audio = document.getElementById("notificationSound");
+    audio.volume = 0.3;
+    audio.currentTime = 0;
     audio.play().catch(e => console.log("Audio play failed:", e));
   }
 
@@ -1283,7 +1489,9 @@
         div.onclick = () => {
           startGroupChat(item.groupId);
           document.getElementById('searchInput').value = '';
-          document.getElementById('sidebar').classList.remove('show');
+          if (isMobile) {
+            document.getElementById('sidebar').classList.remove('show');
+          }
         };
       } else {
         // Private message result
@@ -1301,7 +1509,9 @@
         div.onclick = () => {
           startChat(item.friend);
           document.getElementById('searchInput').value = '';
-          document.getElementById('sidebar').classList.remove('show');
+          if (isMobile) {
+            document.getElementById('sidebar').classList.remove('show');
+          }
         };
       }
       
@@ -1427,7 +1637,7 @@
 
   function showToast(message) {
     const toast = document.createElement("div");
-    toast.className = "fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50";
+    toast.className = "fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-lg z-50 fade-in";
     toast.textContent = message;
     document.body.appendChild(toast);
     
@@ -1450,10 +1660,10 @@
       const item = document.createElement("div");
       item.className = "friend-select-item";
       item.innerHTML = `
-        <div class="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs mr-2">
+        <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white text-sm mr-3">
           ${friend.charAt(0).toUpperCase()}
         </div>
-        <span>${friend}</span>
+        <span class="truncate">${friend}</span>
       `;
       
       item.onclick = () => {
@@ -1510,12 +1720,12 @@
   function createGroup() {
     const groupName = document.getElementById("groupNameInput").value.trim();
     if (!groupName) {
-      alert("Please enter a group name");
+      showToast("Please enter a group name");
       return;
     }
     
     if (selectedFriendsForGroup.length === 0) {
-      alert("Please select at least one friend");
+      showToast("Please select at least one friend");
       return;
     }
     
