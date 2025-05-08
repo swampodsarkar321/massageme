@@ -144,23 +144,6 @@
       color: var(--text-secondary);
       cursor: pointer;
     }
-    .group-icon {
-      position: absolute;
-      bottom: 15px;
-      right: 15px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background-color: var(--accent);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      z-index: 10;
-    }
     .modal {
       position: fixed;
       top: 0;
@@ -217,6 +200,65 @@
       margin-left: 4px;
       cursor: pointer;
     }
+    .group-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 8px;
+      transition: transform 0.2s ease;
+    }
+    .group-icon:hover {
+      transform: scale(1.1);
+    }
+    @media (max-width: 768px) {
+      .w-80 {
+        width: 100%;
+        position: absolute;
+        z-index: 10;
+        height: 100%;
+        display: none;
+      }
+      .w-80.show {
+        display: block;
+      }
+      .chat-section {
+        display: none;
+      }
+      .chat-section.active {
+        display: flex;
+      }
+    }
+    .user-menu-item {
+      transition: background-color 0.2s ease;
+    }
+    .user-menu-item:hover {
+      background-color: var(--bg-secondary);
+    }
+    .message-input {
+      transition: box-shadow 0.2s ease;
+    }
+    .message-input:focus {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+    .friend-item {
+      transition: background-color 0.2s ease;
+    }
+    .friend-item:hover {
+      background-color: var(--bg-secondary);
+    }
+    .request-item {
+      transition: background-color 0.2s ease;
+    }
+    .request-item:hover {
+      background-color: var(--bg-secondary);
+    }
   </style>
 </head>
 <body class="theme-light">
@@ -255,6 +297,9 @@
       <!-- Header -->
       <header class="bg-primary border-b border-primary py-3 px-4 flex justify-between items-center">
         <div class="flex items-center">
+          <button id="menuToggle" class="md:hidden mr-2 text-secondary hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center">
+            <i class="fas fa-bars"></i>
+          </button>
           <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white mr-2">
             <i class="fas fa-comment-alt text-sm"></i>
           </div>
@@ -265,13 +310,16 @@
             <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
               <span id="currentUserInitial">U</span>
             </div>
-            <span class="ml-2 font-medium" id="currentUser"></span>
+            <span class="ml-2 font-medium hidden md:inline" id="currentUser"></span>
+            <div id="createGroupBtn" class="group-icon hidden">
+              <i class="fas fa-users"></i>
+            </div>
             <div id="userMenuBtn" class="ml-2 cursor-pointer">
               <i class="fas fa-chevron-down text-secondary text-sm"></i>
             </div>
             <div id="userMenu" class="absolute right-0 top-10 bg-primary border border-primary rounded-lg shadow-lg w-48 z-50 hidden">
               <ul class="py-1">
-                <li class="px-4 py-2 hover:bg-secondary cursor-pointer" id="logoutBtn">
+                <li class="px-4 py-2 user-menu-item" id="logoutBtn">
                   <i class="fas fa-sign-out-alt mr-2"></i> Logout
                 </li>
               </ul>
@@ -290,7 +338,7 @@
       <!-- Main Content -->
       <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <div class="w-80 border-r border-primary bg-primary flex flex-col">
+        <div id="sidebar" class="w-80 border-r border-primary bg-primary flex flex-col md:block">
           <!-- Search -->
           <div class="p-3 border-b border-primary">
             <div class="relative">
@@ -298,7 +346,7 @@
                 type="text" 
                 id="searchInput" 
                 placeholder="Search messages" 
-                class="w-full bg-secondary text-primary py-2 px-4 pl-10 rounded-lg focus:outline-none"
+                class="w-full bg-secondary text-primary py-2 px-4 pl-10 rounded-lg focus:outline-none message-input"
                 oninput="searchMessages()"
               />
               <i class="fas fa-search absolute left-3 top-3 text-secondary"></i>
@@ -333,7 +381,7 @@
                 type="text" 
                 id="friendName" 
                 placeholder="Friend username" 
-                class="flex-1 bg-secondary text-primary py-2 px-3 rounded-l-lg focus:outline-none"
+                class="flex-1 bg-secondary text-primary py-2 px-3 rounded-l-lg focus:outline-none message-input"
               />
               <button 
                 onclick="sendRequest()" 
@@ -347,7 +395,7 @@
         </div>
 
         <!-- Chat Area -->
-        <div id="chatSection" class="flex-1 flex flex-col bg-secondary hidden">
+        <div id="chatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section">
           <!-- Chat Header -->
           <div class="bg-primary border-b border-primary p-3 flex items-center">
             <button 
@@ -384,7 +432,7 @@
                 type="text" 
                 id="message" 
                 placeholder="Type a message" 
-                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none"
+                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none message-input"
                 onkeypress="if(event.keyCode === 13) sendMessage()"
               />
               <button 
@@ -399,7 +447,7 @@
         </div>
 
         <!-- Group Chat Area -->
-        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary hidden">
+        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section">
           <!-- Group Chat Header -->
           <div class="bg-primary border-b border-primary p-3 flex items-center">
             <button 
@@ -435,7 +483,7 @@
                 type="text" 
                 id="groupMessage" 
                 placeholder="Type a message" 
-                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none"
+                class="flex-1 bg-secondary text-primary py-2 px-4 rounded-full focus:outline-none message-input"
                 onkeypress="if(event.keyCode === 13) sendGroupMessage()"
               />
               <button 
@@ -466,11 +514,6 @@
           </div>
         </div>
       </div>
-      
-      <!-- Group Creation Icon -->
-      <div id="createGroupBtn" class="group-icon hidden">
-        <i class="fas fa-users"></i>
-      </div>
     </div>
 
     <!-- Notification Popup -->
@@ -493,7 +536,7 @@
             type="text" 
             id="groupNameInput" 
             placeholder="Enter group name" 
-            class="w-full bg-secondary text-primary py-2 px-3 rounded-lg focus:outline-none"
+            class="w-full bg-secondary text-primary py-2 px-3 rounded-lg focus:outline-none message-input"
           />
         </div>
         <div class="mb-4">
@@ -558,7 +601,15 @@
     }
     
     // Setup logout button
-    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      logout();
+    });
+    
+    // Setup menu toggle for mobile
+    document.getElementById('menuToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('show');
+    });
   });
 
   function loginUser() {
@@ -587,6 +638,9 @@
     loadGroups();
     updateActivity();
     setupMessageNotifications();
+    
+    // Show welcome toast
+    showToast(`Welcome back, ${user}!`);
   }
 
   function logout() {
@@ -599,9 +653,7 @@
     Object.values(groupMessageListeners).forEach(off => off());
     if (friendStatusInterval) clearInterval(friendStatusInterval);
     
-    // Clear local storage and reset
-    localStorage.removeItem('messageMeUser');
-    currentUser = "";
+    // Clear local variables but keep data in Firebase
     chattingWith = "";
     currentGroup = "";
     allMessages = {};
@@ -615,19 +667,23 @@
     selectedFriendsForGroup = [];
     friendsList = [];
     
+    // Hide dashboard and show login
     document.getElementById("dashboard").classList.add("hidden");
     document.getElementById("login").classList.remove("hidden");
-    document.getElementById("username").value = "";
-    document.getElementById("username").focus();
     
     // Close user menu
     document.getElementById("userMenu").classList.add("hidden");
+    
+    // Keep the username in the input field for easy relogin
+    document.getElementById("username").focus();
   }
 
   function updateActivity() {
     // Update every 30 seconds
     setInterval(() => {
-      db.ref(`users/${currentUser}`).update({ lastActive: Date.now() });
+      if (currentUser) {
+        db.ref(`users/${currentUser}`).update({ lastActive: Date.now() });
+      }
     }, 30000);
   }
 
@@ -693,7 +749,7 @@
 
       Object.entries(data).forEach(([requester, requestData]) => {
         const li = document.createElement("li");
-        li.className = "flex items-center justify-between p-2 hover:bg-secondary rounded-lg transition";
+        li.className = "flex items-center justify-between p-2 hover:bg-secondary rounded-lg transition request-item";
         
         li.innerHTML = `
           <div class="flex items-center">
@@ -756,7 +812,7 @@
 
       Object.entries(data).forEach(([friend, friendData]) => {
         const li = document.createElement("li");
-        li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative";
+        li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative friend-item";
         li.id = `friend-${friend}`;
         
         const friendRef = db.ref(`users/${friend}`);
@@ -788,7 +844,10 @@
             ${unreadBadge}
           `;
           
-          li.onclick = () => startChat(friend);
+          li.onclick = () => {
+            startChat(friend);
+            document.getElementById('sidebar').classList.remove('show');
+          };
         });
         
         list.appendChild(li);
@@ -823,7 +882,7 @@
           if (!groupData) return;
           
           const li = document.createElement("li");
-          li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative";
+          li.className = "flex items-center p-3 hover:bg-secondary rounded-lg cursor-pointer transition relative friend-item";
           li.id = `group-${groupId}`;
           
           // Count members
@@ -852,7 +911,10 @@
             ${unreadBadge}
           `;
           
-          li.onclick = () => startGroupChat(groupId);
+          li.onclick = () => {
+            startGroupChat(groupId);
+            document.getElementById('sidebar').classList.remove('show');
+          };
           list.appendChild(li);
         });
       });
@@ -886,9 +948,7 @@
         updateFriendListItem(friend);
         
         // Show notification
-        if (document.visibilityState !== 'visible') {
-          showMessageNotification(friend, lastMessage.text, lastMessage.timestamp);
-        }
+        showMessageNotification(friend, lastMessage.text, lastMessage.timestamp);
       }
     });
   }
@@ -918,9 +978,7 @@
         updateGroupListItem(groupId);
         
         // Show notification
-        if (document.visibilityState !== 'visible') {
-          showMessageNotification(lastMessage.from + " (Group)", lastMessage.text, lastMessage.timestamp);
-        }
+        showMessageNotification(lastMessage.from + " (Group)", lastMessage.text, lastMessage.timestamp);
       }
     });
   }
@@ -958,7 +1016,10 @@
         ${unreadBadge}
       `;
       
-      friendItem.onclick = () => startChat(friend);
+      friendItem.onclick = () => {
+        startChat(friend);
+        document.getElementById('sidebar').classList.remove('show');
+      };
     });
   }
 
@@ -996,7 +1057,10 @@
         ${unreadBadge}
       `;
       
-      groupItem.onclick = () => startGroupChat(groupId);
+      groupItem.onclick = () => {
+        startGroupChat(groupId);
+        document.getElementById('sidebar').classList.remove('show');
+      };
     });
   }
 
@@ -1012,7 +1076,8 @@
 
   function showMessageNotification(sender, message, timestamp) {
     // Update browser tab title
-    document.title = `(${unreadMessages[sender] || unreadGroupMessages[sender] || 1}) New message from ${sender} | MessageMe`;
+    const unreadCount = unreadMessages[sender] || unreadGroupMessages[sender] || 1;
+    document.title = `(${unreadCount}) New message from ${sender} | MessageMe`;
     
     // Show popup notification
     const popup = document.getElementById("notificationPopup");
@@ -1022,10 +1087,19 @@
     
     popup.classList.add("show");
     
+    // Play notification sound
+    playNotificationSound();
+    
     // Auto hide after 5 seconds
     setTimeout(() => {
       popup.classList.remove("show");
     }, 5000);
+  }
+
+  function playNotificationSound() {
+    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+    audio.volume = 0.2;
+    audio.play().catch(e => console.log("Audio play failed:", e));
   }
 
   function closeNotification() {
@@ -1046,10 +1120,7 @@
     updateFriendListItem(user);
     
     // Update browser title
-    document.title = "MessageMe";
-    
-    // Update responsive behavior
-    document.querySelector('.w-80').classList.add('hidden', 'md:block');
+    document.title = `MessageMe - Chat with ${user}`;
     
     // Monitor friend's status
     monitorFriendStatus(user);
@@ -1093,12 +1164,6 @@
     unreadGroupMessages[groupId] = 0;
     updateGroupListItem(groupId);
     
-    // Update browser title
-    document.title = "MessageMe";
-    
-    // Update responsive behavior
-    document.querySelector('.w-80').classList.add('hidden', 'md:block');
-    
     // Load group info
     db.ref(`groups/${groupId}`).once("value").then(snapshot => {
       const groupData = snapshot.val();
@@ -1109,6 +1174,9 @@
       // Count members
       const memberCount = groupData.members ? Object.keys(groupData.members).length : 0;
       document.getElementById("groupMembersCount").textContent = `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
+      
+      // Update browser title
+      document.title = `MessageMe - ${groupData.name}`;
     });
     
     // Load group messages
@@ -1215,6 +1283,7 @@
         div.onclick = () => {
           startGroupChat(item.groupId);
           document.getElementById('searchInput').value = '';
+          document.getElementById('sidebar').classList.remove('show');
         };
       } else {
         // Private message result
@@ -1232,6 +1301,7 @@
         div.onclick = () => {
           startChat(item.friend);
           document.getElementById('searchInput').value = '';
+          document.getElementById('sidebar').classList.remove('show');
         };
       }
       
@@ -1278,14 +1348,14 @@
   function hideChat() {
     document.getElementById("chatSection").classList.add("hidden");
     document.getElementById("emptyState").classList.remove("hidden");
-    document.querySelector('.w-80').classList.remove('hidden');
+    document.title = "MessageMe";
     if (friendStatusInterval) clearInterval(friendStatusInterval);
   }
 
   function hideGroupChat() {
     document.getElementById("groupChatSection").classList.add("hidden");
     document.getElementById("emptyState").classList.remove("hidden");
-    document.querySelector('.w-80').classList.remove('hidden');
+    document.title = "MessageMe";
   }
 
   function sendMessage() {
