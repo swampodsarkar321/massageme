@@ -282,6 +282,20 @@
       transform: scale(0.95);
     }
 
+    /* Image preview in messages */
+    .message-image {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 12px;
+      margin-top: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .message-image:hover {
+      transform: scale(1.02);
+    }
+
     /* Mobile Responsiveness */
     @media (max-width: 768px) {
       .w-80 {
@@ -301,9 +315,29 @@
 
       .chat-section {
         display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
       }
 
       .chat-section.active {
+        display: flex;
+      }
+
+      .group-chat-section {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+      }
+
+      .group-chat-section.active {
         display: flex;
       }
 
@@ -315,6 +349,10 @@
         width: 90%;
         right: 5%;
         bottom: 80px;
+      }
+
+      .empty-state {
+        z-index: 10;
       }
     }
 
@@ -428,6 +466,89 @@
     .pulse {
       animation: pulse 0.5s ease infinite;
     }
+
+    /* Image preview modal */
+    .image-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .image-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .image-modal-content {
+      max-width: 90%;
+      max-height: 90%;
+    }
+
+    .image-modal-content img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 8px;
+    }
+
+    .image-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+    }
+
+    /* Attachment menu */
+    .attachment-menu {
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      background-color: var(--bg-primary);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .attachment-menu.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .attachment-item {
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .attachment-item:hover {
+      background-color: var(--bg-secondary);
+    }
+
+    .attachment-item i {
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body class="theme-light">
@@ -506,7 +627,7 @@
       </header>
 
       <!-- Main Content -->
-      <div class="flex flex-1 overflow-hidden relative">
+      <div class="flex-1 overflow-hidden relative">
         <!-- Sidebar -->
         <div id="sidebar" class="w-80 border-r border-primary bg-primary flex flex-col md:block absolute md:relative h-full z-10">
           <!-- Search -->
@@ -565,7 +686,7 @@
         </div>
 
         <!-- Chat Area -->
-        <div id="chatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section h-full">
+        <div id="chatSection" class="flex-1 flex flex-col bg-secondary h-full chat-section">
           <!-- Chat Header -->
           <div class="bg-primary border-b border-primary p-3 flex items-center shadow-sm">
             <button 
@@ -593,9 +714,12 @@
           <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
 
           <!-- Message Input -->
-          <div class="bg-primary border-t border-primary p-3 shadow-md">
+          <div class="bg-primary border-t border-primary p-3 shadow-md relative">
             <div class="flex items-center">
-              <button class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary">
+              <button 
+                id="attachmentBtn"
+                class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary"
+              >
                 <i class="fas fa-plus text-secondary"></i>
               </button>
               <input 
@@ -613,11 +737,42 @@
                 <i class="fas fa-paper-plane"></i>
               </button>
             </div>
+            
+            <!-- Attachment menu -->
+            <div id="attachmentMenu" class="attachment-menu">
+              <div class="attachment-item" onclick="showImageInput()">
+                <i class="fas fa-image"></i>
+                <span>Send Image</span>
+              </div>
+            </div>
+            
+            <!-- Hidden image input -->
+            <input 
+              type="text" 
+              id="imageUrlInput" 
+              placeholder="Paste image URL" 
+              class="hidden w-full bg-secondary text-primary py-3 px-4 rounded-xl mt-2 focus:outline-none message-input"
+              onkeypress="if(event.keyCode === 13) sendImageMessage()"
+            />
+            <div class="hidden flex justify-end mt-2" id="imageUrlButtons">
+              <button 
+                onclick="hideImageInput()" 
+                class="px-4 py-2 rounded-lg bg-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary mr-2"
+              >
+                Cancel
+              </button>
+              <button 
+                onclick="sendImageMessage()" 
+                class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition btn-primary"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Group Chat Area -->
-        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary hidden chat-section h-full">
+        <div id="groupChatSection" class="flex-1 flex flex-col bg-secondary h-full chat-section">
           <!-- Group Chat Header -->
           <div class="bg-primary border-b border-primary p-3 flex items-center shadow-sm">
             <button 
@@ -644,9 +799,12 @@
           <div id="groupChatBox" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
 
           <!-- Group Message Input -->
-          <div class="bg-primary border-t border-primary p-3 shadow-md">
+          <div class="bg-primary border-t border-primary p-3 shadow-md relative">
             <div class="flex items-center">
-              <button class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary">
+              <button 
+                id="groupAttachmentBtn"
+                class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mr-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary"
+              >
                 <i class="fas fa-plus text-secondary"></i>
               </button>
               <input 
@@ -664,11 +822,42 @@
                 <i class="fas fa-paper-plane"></i>
               </button>
             </div>
+            
+            <!-- Group attachment menu -->
+            <div id="groupAttachmentMenu" class="attachment-menu">
+              <div class="attachment-item" onclick="showGroupImageInput()">
+                <i class="fas fa-image"></i>
+                <span>Send Image</span>
+              </div>
+            </div>
+            
+            <!-- Hidden group image input -->
+            <input 
+              type="text" 
+              id="groupImageUrlInput" 
+              placeholder="Paste image URL" 
+              class="hidden w-full bg-secondary text-primary py-3 px-4 rounded-xl mt-2 focus:outline-none message-input"
+              onkeypress="if(event.keyCode === 13) sendGroupImageMessage()"
+            />
+            <div class="hidden flex justify-end mt-2" id="groupImageUrlButtons">
+              <button 
+                onclick="hideGroupImageInput()" 
+                class="px-4 py-2 rounded-lg bg-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition btn-secondary mr-2"
+              >
+                Cancel
+              </button>
+              <button 
+                onclick="sendGroupImageMessage()" 
+                class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition btn-primary"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Empty State -->
-        <div id="emptyState" class="flex-1 flex items-center justify-center bg-secondary">
+        <div id="emptyState" class="flex-1 flex items-center justify-center bg-secondary empty-state">
           <div class="text-center p-6 max-w-md">
             <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
               <i class="fas fa-comment-dots text-4xl text-secondary"></i>
@@ -731,6 +920,16 @@
       </div>
     </div>
 
+    <!-- Image Preview Modal -->
+    <div id="imageModal" class="image-modal">
+      <div class="image-modal-close" onclick="closeImageModal()">
+        <i class="fas fa-times"></i>
+      </div>
+      <div class="image-modal-content">
+        <img id="modalImage" src="" alt="Preview">
+      </div>
+    </div>
+
     <!-- Audio element for notification sound -->
     <audio id="notificationSound" preload="auto">
       <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
@@ -790,6 +989,7 @@
     // Handle window resize
     window.addEventListener('resize', function() {
       isMobile = window.innerWidth <= 768;
+      adjustChatSections();
     });
 
     // Close sidebar when clicking outside on mobile
@@ -798,8 +998,41 @@
           !document.getElementById('menuToggle').contains(e.target)) {
         document.getElementById('sidebar').classList.remove('show');
       }
+      
+      // Close attachment menus
+      if (!document.getElementById('attachmentBtn').contains(e.target)) {
+        document.getElementById('attachmentMenu').classList.remove('show');
+      }
+      if (!document.getElementById('groupAttachmentBtn').contains(e.target)) {
+        document.getElementById('groupAttachmentMenu').classList.remove('show');
+      }
     });
+
+    // Setup attachment buttons
+    document.getElementById('attachmentBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById('attachmentMenu').classList.toggle('show');
+    });
+    
+    document.getElementById('groupAttachmentBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById('groupAttachmentMenu').classList.toggle('show');
+    });
+
+    // Initialize chat sections
+    adjustChatSections();
   });
+
+  function adjustChatSections() {
+    if (isMobile) {
+      document.getElementById('chatSection').classList.remove('active');
+      document.getElementById('groupChatSection').classList.remove('active');
+      document.getElementById('emptyState').classList.remove('hidden');
+    } else {
+      document.getElementById('chatSection').classList.remove('hidden');
+      document.getElementById('groupChatSection').classList.remove('hidden');
+    }
+  }
 
   function loginUser() {
     const user = document.getElementById("username").value.trim();
@@ -1144,7 +1377,7 @@
         updateFriendListItem(friend);
         
         // Show notification
-        showMessageNotification(friend, lastMessage.text, lastMessage.timestamp);
+        showMessageNotification(friend, lastMessage.text, lastMessage.timestamp, lastMessage.imageUrl);
       }
     });
   }
@@ -1174,7 +1407,7 @@
         updateGroupListItem(groupId);
         
         // Show notification
-        showMessageNotification(lastMessage.from + " (Group)", lastMessage.text, lastMessage.timestamp);
+        showMessageNotification(lastMessage.from + " (Group)", lastMessage.text, lastMessage.timestamp, lastMessage.imageUrl);
       }
     });
   }
@@ -1274,7 +1507,7 @@
     });
   }
 
-  function showMessageNotification(sender, message, timestamp) {
+  function showMessageNotification(sender, message, timestamp, imageUrl) {
     // Update browser tab title
     const unreadCount = unreadMessages[sender] || unreadGroupMessages[sender] || 1;
     document.title = `(${unreadCount}) New message from ${sender} | MessageMe`;
@@ -1282,7 +1515,13 @@
     // Show popup notification
     const popup = document.getElementById("notificationPopup");
     popup.querySelector('.sender').textContent = sender;
-    popup.querySelector('.message').textContent = message.length > 80 ? message.substring(0, 80) + '...' : message;
+    
+    if (imageUrl) {
+      popup.querySelector('.message').innerHTML = '<i class="fas fa-image mr-1"></i> Image';
+    } else {
+      popup.querySelector('.message').textContent = message.length > 80 ? message.substring(0, 80) + '...' : message;
+    }
+    
     popup.querySelector('.time').textContent = formatTime(timestamp);
     
     popup.classList.add("show");
@@ -1315,9 +1554,17 @@
   function startChat(user) {
     chattingWith = user;
     currentGroup = "";
-    document.getElementById("chatSection").classList.remove("hidden");
-    document.getElementById("groupChatSection").classList.add("hidden");
-    document.getElementById("emptyState").classList.add("hidden");
+    
+    if (isMobile) {
+      document.getElementById("chatSection").classList.add("active");
+      document.getElementById("groupChatSection").classList.remove("active");
+      document.getElementById("emptyState").classList.add("hidden");
+    } else {
+      document.getElementById("chatSection").classList.remove("hidden");
+      document.getElementById("groupChatSection").classList.add("hidden");
+      document.getElementById("emptyState").classList.add("hidden");
+    }
+    
     document.getElementById("chatWith").textContent = user;
     document.getElementById("chatWithInitial").textContent = user.charAt(0).toUpperCase();
     
@@ -1343,9 +1590,17 @@
         const div = document.createElement("div");
         div.className = `flex ${isSent ? 'justify-end' : 'justify-start'}`;
         
+        let messageContent = `<p>${msg.text}</p>`;
+        if (msg.imageUrl) {
+          messageContent = `
+            <p>${msg.text || ''}</p>
+            <img src="${msg.imageUrl}" alt="Sent image" class="message-image" onclick="showFullImage('${msg.imageUrl}')">
+          `;
+        }
+        
         div.innerHTML = `
           <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
-            <p>${msg.text}</p>
+            ${messageContent}
             <p class="text-xs mt-1 ${isSent ? 'text-blue-100' : 'text-secondary'} text-right">
               ${formatTime(msg.timestamp || Date.now())}
             </p>
@@ -1362,9 +1617,16 @@
   function startGroupChat(groupId) {
     currentGroup = groupId;
     chattingWith = "";
-    document.getElementById("chatSection").classList.add("hidden");
-    document.getElementById("groupChatSection").classList.remove("hidden");
-    document.getElementById("emptyState").classList.add("hidden");
+    
+    if (isMobile) {
+      document.getElementById("groupChatSection").classList.add("active");
+      document.getElementById("chatSection").classList.remove("active");
+      document.getElementById("emptyState").classList.add("hidden");
+    } else {
+      document.getElementById("groupChatSection").classList.remove("hidden");
+      document.getElementById("chatSection").classList.add("hidden");
+      document.getElementById("emptyState").classList.add("hidden");
+    }
     
     // Reset unread count for this group
     unreadGroupMessages[groupId] = 0;
@@ -1397,10 +1659,18 @@
         const div = document.createElement("div");
         div.className = `flex ${isSent ? 'justify-end' : 'justify-start'}`;
         
+        let messageContent = `<p>${msg.text}</p>`;
+        if (msg.imageUrl) {
+          messageContent = `
+            <p>${msg.text || ''}</p>
+            <img src="${msg.imageUrl}" alt="Sent image" class="message-image" onclick="showFullImage('${msg.imageUrl}')">
+          `;
+        }
+        
         div.innerHTML = `
           <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
             <p class="font-bold ${!isSent ? 'text-purple-500' : ''}">${isSent ? 'You' : msg.from}</p>
-            <p>${msg.text}</p>
+            ${messageContent}
             <p class="text-xs mt-1 ${isSent ? 'text-blue-100' : 'text-secondary'} text-right">
               ${formatTime(msg.timestamp || Date.now())}
             </p>
@@ -1423,7 +1693,7 @@
     // Search through all messages
     Object.entries(allMessages).forEach(([friend, messages]) => {
       Object.entries(messages).forEach(([key, msg]) => {
-        if (msg.text.toLowerCase().includes(searchTerm)) {
+        if (msg.text && msg.text.toLowerCase().includes(searchTerm)) {
           foundMessages.push({
             friend,
             message: msg
@@ -1435,7 +1705,7 @@
     // Search through group messages
     Object.entries(allGroupMessages).forEach(([groupId, messages]) => {
       Object.entries(messages).forEach(([key, msg]) => {
-        if (msg.text.toLowerCase().includes(searchTerm)) {
+        if (msg.text && msg.text.toLowerCase().includes(searchTerm)) {
           db.ref(`groups/${groupId}`).once("value").then(snapshot => {
             const groupData = snapshot.val();
             foundMessages.push({
@@ -1556,15 +1826,25 @@
   }
 
   function hideChat() {
-    document.getElementById("chatSection").classList.add("hidden");
-    document.getElementById("emptyState").classList.remove("hidden");
+    if (isMobile) {
+      document.getElementById("chatSection").classList.remove("active");
+      document.getElementById("emptyState").classList.remove("hidden");
+    } else {
+      document.getElementById("chatSection").classList.add("hidden");
+      document.getElementById("emptyState").classList.remove("hidden");
+    }
     document.title = "MessageMe";
     if (friendStatusInterval) clearInterval(friendStatusInterval);
   }
 
   function hideGroupChat() {
-    document.getElementById("groupChatSection").classList.add("hidden");
-    document.getElementById("emptyState").classList.remove("hidden");
+    if (isMobile) {
+      document.getElementById("groupChatSection").classList.remove("active");
+      document.getElementById("emptyState").classList.remove("hidden");
+    } else {
+      document.getElementById("groupChatSection").classList.add("hidden");
+      document.getElementById("emptyState").classList.remove("hidden");
+    }
     document.title = "MessageMe";
   }
 
@@ -1593,6 +1873,85 @@
     });
     
     document.getElementById("groupMessage").value = "";
+  }
+
+  // Image message functions
+  function showImageInput() {
+    document.getElementById('attachmentMenu').classList.remove('show');
+    document.getElementById('imageUrlInput').classList.remove('hidden');
+    document.getElementById('imageUrlButtons').classList.remove('hidden');
+    document.getElementById('imageUrlInput').focus();
+  }
+
+  function hideImageInput() {
+    document.getElementById('imageUrlInput').classList.add('hidden');
+    document.getElementById('imageUrlButtons').classList.add('hidden');
+    document.getElementById('imageUrlInput').value = '';
+  }
+
+  function sendImageMessage() {
+    const imageUrl = document.getElementById("imageUrlInput").value.trim();
+    if (!imageUrl || !chattingWith) return;
+
+    // Validate URL
+    try {
+      new URL(imageUrl);
+    } catch (e) {
+      showToast("Please enter a valid image URL");
+      return;
+    }
+
+    const chatKey = [currentUser, chattingWith].sort().join('_');
+    db.ref(`messages/${chatKey}`).push({ 
+      from: currentUser, 
+      imageUrl,
+      timestamp: Date.now()
+    });
+    
+    hideImageInput();
+  }
+
+  function showGroupImageInput() {
+    document.getElementById('groupAttachmentMenu').classList.remove('show');
+    document.getElementById('groupImageUrlInput').classList.remove('hidden');
+    document.getElementById('groupImageUrlButtons').classList.remove('hidden');
+    document.getElementById('groupImageUrlInput').focus();
+  }
+
+  function hideGroupImageInput() {
+    document.getElementById('groupImageUrlInput').classList.add('hidden');
+    document.getElementById('groupImageUrlButtons').classList.add('hidden');
+    document.getElementById('groupImageUrlInput').value = '';
+  }
+
+  function sendGroupImageMessage() {
+    const imageUrl = document.getElementById("groupImageUrlInput").value.trim();
+    if (!imageUrl || !currentGroup) return;
+
+    // Validate URL
+    try {
+      new URL(imageUrl);
+    } catch (e) {
+      showToast("Please enter a valid image URL");
+      return;
+    }
+
+    db.ref(`groupMessages/${currentGroup}`).push({ 
+      from: currentUser, 
+      imageUrl,
+      timestamp: Date.now()
+    });
+    
+    hideGroupImageInput();
+  }
+
+  function showFullImage(url) {
+    document.getElementById('modalImage').src = url;
+    document.getElementById('imageModal').classList.add('show');
+  }
+
+  function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('show');
   }
 
   function toggleTheme() {
@@ -1776,6 +2135,13 @@
   });
 
   document.getElementById("createGroupBtn").addEventListener("click", showCreateGroupModal);
+
+  // Close image modal when clicking outside
+  document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeImageModal();
+    }
+  });
 </script>
 </body>
 </html>
