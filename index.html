@@ -242,6 +242,11 @@
       border-radius: 8px;
       margin-bottom: 4px;
       position: relative;
+      cursor: pointer;
+    }
+
+    .friend-item:hover {
+      background-color: var(--bg-secondary);
     }
 
     .friend-item.active {
@@ -396,8 +401,8 @@
     }
 
     .message {
-      max-width: 80%;
-      margin-bottom: 12px;
+      max-width: 70%;
+      margin-bottom: 8px;
     }
 
     .message.sent {
@@ -409,7 +414,7 @@
     }
 
     .message-bubble {
-      padding: 12px 16px;
+      padding: 8px 12px;
       border-radius: 18px;
       word-break: break-word;
     }
@@ -426,9 +431,9 @@
     }
 
     .message-time {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-secondary);
-      margin-top: 4px;
+      margin-top: 2px;
       text-align: right;
     }
 
@@ -442,18 +447,18 @@
 
     .message-input {
       flex: 1;
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: 20px;
       border: none;
       background-color: var(--bg-secondary);
       color: var(--text-primary);
-      font-size: 15px;
+      font-size: 14px;
       margin: 0 8px;
     }
 
     .send-button {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background-color: var(--accent);
       color: white;
@@ -657,6 +662,10 @@
       cursor: pointer;
     }
 
+    .friend-option:hover {
+      background-color: var(--bg-secondary);
+    }
+
     .friend-option.selected {
       background-color: rgba(45, 136, 255, 0.2);
     }
@@ -686,6 +695,7 @@
       font-weight: 500;
       border: none;
       margin-left: 8px;
+      cursor: pointer;
     }
 
     .cancel-btn {
@@ -733,10 +743,16 @@
       bottom: 30px;
       color: var(--text-secondary);
       font-size: 14px;
+      opacity: 0;
+      animation: fadeIn 2s ease 1s forwards;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
     }
 
     .group-avatar {
@@ -748,6 +764,7 @@
       font-weight: bold;
       color: var(--group);
       margin-bottom: 4px;
+      font-size: 13px;
     }
 
     .theme-toggle {
@@ -757,6 +774,7 @@
       font-size: 20px;
       padding: 8px;
       margin-left: 8px;
+      cursor: pointer;
     }
 
     .create-group-btn {
@@ -766,6 +784,59 @@
       font-size: 20px;
       padding: 8px;
       margin-left: 8px;
+      cursor: pointer;
+    }
+    
+    .login-animation {
+      animation: loginFadeIn 1.5s ease forwards;
+    }
+    
+    @keyframes loginFadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    .logout-btn {
+      width: 100%;
+      text-align: left;
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .logout-btn:hover {
+      background-color: var(--bg-secondary);
+    }
+    
+    .logout-btn i {
+      margin-right: 8px;
+    }
+    
+    .image-preview {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    
+    .image-preview.show {
+      display: block;
+    }
+    
+    .remove-image-btn {
+      background-color: var(--notification);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
     }
 
     @media (min-width: 768px) {
@@ -813,7 +884,7 @@
   <!-- Login Screen -->
   <div id="loginScreen" class="app-container" style="display: none;">
     <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px;">
-      <div style="background-color: var(--bg-primary); padding: 24px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+      <div class="login-animation" style="background-color: var(--bg-primary); padding: 24px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
         <div style="text-align: center; margin-bottom: 24px;">
           <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #00b4ff 0%, #0066ff 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
             <i class="fas fa-comment-alt" style="color: white; font-size: 32px;"></i>
@@ -832,7 +903,7 @@
         </div>
         <button 
           onclick="loginUser()" 
-          style="width: 100%; padding: 14px; background: linear-gradient(135deg, #00b4ff 0%, #0066ff 100%); color: white; border: none; border-radius: 8px; font-weight: 500; font-size: 16px;"
+          style="width: 100%; padding: 14px; background: linear-gradient(135deg, #00b4ff 0%, #0066ff 100%); color: white; border: none; border-radius: 8px; font-weight: 500; font-size: 16px; cursor: pointer;"
         >
           Login
         </button>
@@ -863,8 +934,8 @@
       <!-- User Menu -->
       <div id="userMenu" style="position: absolute; top: 60px; right: 16px; background-color: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); display: none; z-index: 100;">
         <div style="padding: 8px 0;">
-          <button onclick="logout()" style="width: 100%; text-align: left; padding: 10px 16px; background: none; border: none; color: var(--text-primary); display: flex; align-items: center;">
-            <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
             Logout
           </button>
         </div>
@@ -914,9 +985,9 @@
               type="text" 
               id="friendName" 
               placeholder="Friend username" 
-              style="flex: 1; padding: 12px; border: none; border-radius: 20px 0 0 20px; background-color: var(--bg-secondary); color: var(--text-primary);"
+              style="flex: 1; padding: 10px 12px; border: none; border-radius: 20px 0 0 20px; background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px;"
             />
-            <button onclick="sendRequest()" style="padding: 12px 16px; border: none; border-radius: 0 20px 20px 0; background-color: var(--accent); color: white; font-weight: 500;">
+            <button onclick="sendRequest()" style="padding: 10px 14px; border: none; border-radius: 0 20px 20px 0; background-color: var(--accent); color: white; font-weight: 500; cursor: pointer;">
               <i class="fas fa-user-plus"></i>
             </button>
           </div>
@@ -956,9 +1027,16 @@
             <div id="chatMessages"></div>
           </div>
           <div class="message-input-container">
-            <button style="background: none; border: none; color: var(--text-primary); font-size: 20px; padding: 8px;">
-              <i class="fas fa-plus"></i>
+            <button style="background: none; border: none; color: var(--text-primary); font-size: 20px; padding: 8px; cursor: pointer;" onclick="document.getElementById('imageInput').click()">
+              <i class="fas fa-image"></i>
             </button>
+            <input 
+              type="file" 
+              id="imageInput" 
+              accept="image/*" 
+              style="display: none;"
+              onchange="handleImageUpload()"
+            />
             <input 
               type="text" 
               id="messageInput" 
@@ -970,6 +1048,7 @@
               <i class="fas fa-paper-plane"></i>
             </button>
           </div>
+          <div id="imagePreviewContainer" style="padding: 0 16px;"></div>
         </div>
 
         <!-- Group Chat -->
@@ -990,9 +1069,16 @@
             <div id="groupMessages"></div>
           </div>
           <div class="message-input-container">
-            <button style="background: none; border: none; color: var(--text-primary); font-size: 20px; padding: 8px;">
-              <i class="fas fa-plus"></i>
+            <button style="background: none; border: none; color: var(--text-primary); font-size: 20px; padding: 8px; cursor: pointer;" onclick="document.getElementById('groupImageInput').click()">
+              <i class="fas fa-image"></i>
             </button>
+            <input 
+              type="file" 
+              id="groupImageInput" 
+              accept="image/*" 
+              style="display: none;"
+              onchange="handleGroupImageUpload()"
+            />
             <input 
               type="text" 
               id="groupMessageInput" 
@@ -1004,6 +1090,7 @@
               <i class="fas fa-paper-plane"></i>
             </button>
           </div>
+          <div id="groupImagePreviewContainer" style="padding: 0 16px;"></div>
         </div>
       </div>
     </div>
@@ -1076,6 +1163,8 @@
   let selectedFriendsForGroup = [];
   let friendsList = [];
   let isMobile = window.innerWidth <= 768;
+  let selectedImage = null;
+  let selectedGroupImage = null;
 
   // Initialize the app
   document.addEventListener('DOMContentLoaded', function() {
@@ -1172,6 +1261,7 @@
     if (friendStatusInterval) clearInterval(friendStatusInterval);
     
     // Reset app state
+    currentUser = "";
     chattingWith = "";
     currentGroup = "";
     allMessages = {};
@@ -1184,6 +1274,8 @@
     lastGroupMessageTimestamps = {};
     selectedFriendsForGroup = [];
     friendsList = [];
+    selectedImage = null;
+    selectedGroupImage = null;
     
     // Switch to login view
     document.getElementById("app").style.display = "none";
@@ -1193,6 +1285,9 @@
     // Clear any active chats
     hideChat();
     hideGroupChat();
+    
+    // Clear localStorage
+    localStorage.removeItem('messageMeUser');
     
     // Keep the username in the input field for easy relogin
     document.getElementById("username").focus();
@@ -1657,7 +1752,9 @@
         
         div.innerHTML = `
           <div class="message-bubble">
-            <p>${msg.text}</p>
+            ${msg.isImage ? 
+              `<img src="${msg.text}" style="max-width: 100%; border-radius: 8px; margin-bottom: 4px;" />` : 
+              `<p>${msg.text}</p>`}
           </div>
           <div class="message-time">${formatTime(msg.timestamp || Date.now())}</div>
         `;
@@ -1714,7 +1811,9 @@
         div.innerHTML = `
           <div class="message-bubble">
             ${!isSent ? `<div class="group-message-name">${msg.from}</div>` : ''}
-            <p>${msg.text}</p>
+            ${msg.isImage ? 
+              `<img src="${msg.text}" style="max-width: 100%; border-radius: 8px; margin-bottom: 4px;" />` : 
+              `<p>${msg.text}</p>`}
           </div>
           <div class="message-time">${formatTime(msg.timestamp || Date.now())}</div>
         `;
@@ -1729,6 +1828,68 @@
     });
   }
 
+  // Handle image upload for private chat
+  function handleImageUpload() {
+    const fileInput = document.getElementById('imageInput');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+      showToast('Please select an image file');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedImage = e.target.result;
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      previewContainer.innerHTML = `
+        <img src="${selectedImage}" class="image-preview show" />
+        <button class="remove-image-btn" onclick="removeSelectedImage()">Remove Image</button>
+      `;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Handle image upload for group chat
+  function handleGroupImageUpload() {
+    const fileInput = document.getElementById('groupImageInput');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+      showToast('Please select an image file');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedGroupImage = e.target.result;
+      const previewContainer = document.getElementById('groupImagePreviewContainer');
+      previewContainer.innerHTML = `
+        <img src="${selectedGroupImage}" class="image-preview show" />
+        <button class="remove-image-btn" onclick="removeSelectedGroupImage()">Remove Image</button>
+      `;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Remove selected image from private chat
+  function removeSelectedImage() {
+    selectedImage = null;
+    document.getElementById('imageInput').value = '';
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+  }
+
+  // Remove selected image from group chat
+  function removeSelectedGroupImage() {
+    selectedGroupImage = null;
+    document.getElementById('groupImageInput').value = '';
+    document.getElementById('groupImagePreviewContainer').innerHTML = '';
+  }
+
   // Search messages
   function searchMessages() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -1739,7 +1900,7 @@
     // Search through all messages
     Object.entries(allMessages).forEach(([friend, messages]) => {
       Object.entries(messages).forEach(([key, msg]) => {
-        if (msg.text.toLowerCase().includes(searchTerm)) {
+        if (msg.text && !msg.isImage && msg.text.toLowerCase().includes(searchTerm)) {
           foundMessages.push({
             friend,
             message: msg
@@ -1751,7 +1912,7 @@
     // Search through group messages
     Object.entries(allGroupMessages).forEach(([groupId, messages]) => {
       Object.entries(messages).forEach(([key, msg]) => {
-        if (msg.text.toLowerCase().includes(searchTerm)) {
+        if (msg.text && !msg.isImage && msg.text.toLowerCase().includes(searchTerm)) {
           db.ref(`groups/${groupId}`).once("value").then(snapshot => {
             const groupData = snapshot.val();
             foundMessages.push({
@@ -1875,6 +2036,7 @@
     document.getElementById("emptyState").style.display = "flex";
     document.title = "MessageMe";
     if (friendStatusInterval) clearInterval(friendStatusInterval);
+    removeSelectedImage();
   }
 
   // Hide group chat
@@ -1882,35 +2044,63 @@
     document.getElementById("groupChat").style.display = "none";
     document.getElementById("emptyState").style.display = "flex";
     document.title = "MessageMe";
+    removeSelectedGroupImage();
   }
 
   // Send private message
   function sendMessage() {
-    const text = document.getElementById("messageInput").value.trim();
-    if (!text || !chattingWith) return;
+    const textInput = document.getElementById("messageInput");
+    const text = textInput.value.trim();
+    
+    if ((!text && !selectedImage) || !chattingWith) return;
 
     const chatKey = [currentUser, chattingWith].sort().join('_');
-    db.ref(`messages/${chatKey}`).push({ 
-      from: currentUser, 
-      text,
-      timestamp: Date.now()
-    });
     
-    document.getElementById("messageInput").value = "";
+    if (selectedImage) {
+      // Send image
+      db.ref(`messages/${chatKey}`).push({ 
+        from: currentUser, 
+        text: selectedImage,
+        isImage: true,
+        timestamp: Date.now()
+      });
+      removeSelectedImage();
+    } else {
+      // Send text message
+      db.ref(`messages/${chatKey}`).push({ 
+        from: currentUser, 
+        text,
+        timestamp: Date.now()
+      });
+      textInput.value = "";
+    }
   }
 
   // Send group message
   function sendGroupMessage() {
-    const text = document.getElementById("groupMessageInput").value.trim();
-    if (!text || !currentGroup) return;
-
-    db.ref(`groupMessages/${currentGroup}`).push({ 
-      from: currentUser, 
-      text,
-      timestamp: Date.now()
-    });
+    const textInput = document.getElementById("groupMessageInput");
+    const text = textInput.value.trim();
     
-    document.getElementById("groupMessageInput").value = "";
+    if ((!text && !selectedGroupImage) || !currentGroup) return;
+
+    if (selectedGroupImage) {
+      // Send image
+      db.ref(`groupMessages/${currentGroup}`).push({ 
+        from: currentUser, 
+        text: selectedGroupImage,
+        isImage: true,
+        timestamp: Date.now()
+      });
+      removeSelectedGroupImage();
+    } else {
+      // Send text message
+      db.ref(`groupMessages/${currentGroup}`).push({ 
+        from: currentUser, 
+        text,
+        timestamp: Date.now()
+      });
+      textInput.value = "";
+    }
   }
 
   // Toggle dark/light theme
